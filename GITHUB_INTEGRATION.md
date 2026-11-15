@@ -8,13 +8,15 @@ M3.4 now adds explicitly confirmed future-event status automation. Its latest
 section below supersedes earlier preview-only deployment notes. Existing OAuth,
 repository browsing, commit history and open-PR reads are retained.
 
-## Current operational status — M3.5 step 1
+## Current operational status — M3.5 step 2
 
 M3.1–M3.4 source is implemented. M3.5 is approved for operational acceptance and
-hardening; this first change establishes baseline evidence and reconciles docs only.
+hardening. Baseline documentation and formatting cleanup are committed; this
+change adds durable worker signals and classification (details at the end).
 Existing processing controls, task links, previews and confirmed PR automation retain
-their current behavior. No new health monitor, diagnostic operation, retention logic
-or CI job is implemented in this step. The acceptance ledger below is current;
+their current behavior. Health APIs/panels, diagnostic operations, retention reporting
+and CI remain later steps. The baseline ledger is historical; the step 2 section
+at the end records the current implementation and unverified database gate;
 earlier phase sections remain historical implementation/setup records.
 
 ## Architecture decision
@@ -809,3 +811,72 @@ Step 1 pauses for the owner's documentation commit confirmation. M3.5 remains op
 until the required tests and real acceptance gates are actually satisfied. Generic
 workflow builders/email/actions, Redis, a GitHub App migration and M4 collaborative
 documentation are outside the approved operational scope.
+
+## M3.5 step 2 — durable worker-health evidence
+
+This step adds persistence and classification only. Administrator API/panel work
+is steps 3–4; existing panels are unchanged. Migration
+`202611150003_github_worker_health` adds `GitHubWorkerSignal`, `GitHubWorkerMode`
+and `GitHubWorkerRunState`. It inserts no seed data and alters no queue, task,
+rule, execution, observation or receipt rows. Apply to devflow_test first using
+the guarded commands in VERIFICATION.md; database acceptance is blocked here.
+Do not deploy the new worker against an unmigrated database.
+
+Each worker process generates a random run ID. Each eligible repository connection
+gets one signal row per run, scoped by composite connection/project/workspace
+foreign keys. Global workers cover active connections in non-archived projects;
+GITHUB_WORKER_CONNECTION_ID limits coverage. New eligible connections are discovered
+on later pulses. A worker with no eligible connections produces no scoped signal;
+that is insufficient evidence, not a failed worker.
+
+- Initial signal writes must succeed before claiming any work. Missing migration
+  or database access fails startup without claiming events.
+- Heartbeats run every 10 seconds independently of job processing and idle polling.
+  After startup and the first completed poll, fast queue polls/progress are coalesced
+  into the periodic pulse, with a final flush on shutdown. Writes are serialized,
+  slow periodic writes coalesced, and timers drained on shutdown.
+  PostgreSQL supplies timestamps. Project key-share locks precede connection FK
+  checks; no queue locks, external requests or task writes occur in these short
+  monitoring transactions. Existing lease renewal/fencing remains separate.
+- polledAt records a completed queue batch. idleAt records an empty batch and is
+  cleared on the next nonempty batch. It is an as-of observation, not a promise
+  that no work arrived afterward. Future-dated/backoff work does not make an idle
+  worker unhealthy.
+- progressAt records a settled attempt only for its server-resolved connection.
+  It is a database persistence timestamp (up to one heartbeat interval after the
+  observation), not an exact event timestamp. It may represent successful, failed,
+  conflicted or cancelled processing; it is
+  not a success counter. Existing delivery/execution receipts remain authoritative.
+  Worker crashes can lose the latest in-memory progress signal; never job effects
+  already committed to PostgreSQL. No automated task mutation is added by monitoring.
+- Each row stores its stale interval: max(45 seconds, 3 × configured poll interval
+  - 10 seconds), accommodating the existing maximum 60-second polling option.
+- Terminal run states are COMPLETED (bounded run), STOPPED (graceful signal) and
+  FAILED (runtime failure); unexpected process death leaves RUNNING evidence to
+  age out. Finalization cannot revive a terminal row, and late pulses cannot
+  overwrite it. Each replacement process has a separate run ID.
+- Later monitoring write failures log only WORKER_HEALTH_WRITE_FAILED and retry
+  on later pulses; they never re-execute a job or change its retry policy. Shutdown
+  write failure leaves old evidence to age out rather than inventing a clean exit.
+
+Classifier semantics for a **single authorized connection**:
+
+| State                 | Meaning                                                                                                                                                                                   |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| HEALTHY_IDLE          | Fresh continuous heartbeat and completed poll; latest batch empty. No completed jobs are required.                                                                                        |
+| HEALTHY_ACTIVE        | Fresh continuous heartbeat and completed poll; latest batch did work. Not a claim that an individual job succeeded.                                                                       |
+| UNAVAILABLE           | Continuous worker evidence exists, but no fresh RUNNING heartbeat remains (or continuous runs ended). Means no fresh continuous signal, not proof of host failure or a queue-delay alert. |
+| BOUNDED_RUN           | Only --once evidence exists; even a fresh RUNNING bounded process is not proof of continuous service.                                                                                     |
+| INSUFFICIENT_EVIDENCE | No signal, future clock evidence, or fresh heartbeat without recent poll evidence. Long in-flight work may retain heartbeat but need inspection rather than an unavailable alert.         |
+
+A fresh continuous replica overrides stale replicas. A bounded run does not restore
+continuous availability after known continuous workers stop. Readers must first
+validate authorization and connection/project state; a retained signal must not
+make a disconnected/archived scope appear operational. The pure classifier does
+not provide access control, query databases or grant any execution rights.
+
+Storage is lightweight (one row per run/connection, updated in place). Historical
+runs are retained; there is no retention deletion, archival, pruning job or external
+monitoring service. Large installations should scope worker instances as needed.
+No hostnames, OAuth tokens, webhook secrets, payloads or cross-scope job counts
+are stored. A run ID is an internal correlation identifier, not a credential.

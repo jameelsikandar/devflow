@@ -15,9 +15,13 @@ import {
   renewGitHubLease,
   type WorkerOptions,
 } from './github-processing';
-export async function processNextGitHubDelivery(options: WorkerOptions) {
+export async function processNextGitHubDelivery(
+  options: WorkerOptions,
+  onAttempt?: (connectionId: string) => void,
+) {
   const lease = await claimGitHubDelivery(options);
   if (!lease) return false;
+  let connectionId: string | undefined;
   let renewing = false;
   const heartbeat = setInterval(
     () => {
@@ -36,6 +40,7 @@ export async function processNextGitHubDelivery(options: WorkerOptions) {
       where: { id: lease.id },
       include: { connection: true },
     });
+    connectionId = source.connectionId;
     if (
       parseStoredGitHubEvent(source.event, source.dataVersion, source.data).repositoryId !==
       source.connection.repositoryId
@@ -71,5 +76,7 @@ export async function processNextGitHubDelivery(options: WorkerOptions) {
   } finally {
     clearInterval(heartbeat);
   }
+  // In-memory telemetry only, after fenced completion/failure. Not a success receipt.
+  if (connectionId) onAttempt?.(connectionId);
   return true;
 }

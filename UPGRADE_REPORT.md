@@ -6,8 +6,9 @@ The audit, roadmap/dependency implementation (Milestone 1), and agentic AI proje
 manager (Milestone 2) are implemented. Milestone 3 includes M3.1 connections,
 M3.2 event processing, M3.3 workflow definitions/dry-run previews, and M3.4
 confirmed future-event status automation. Database/browser/live automation acceptance
-remains open in this sandbox. M3.5 is approved and in progress at step 1
-(baseline/documentation only); its operational features are not implemented yet.
+remains open in this sandbox. M3.5 step 2 now adds durable worker signals and
+evidence classification; administrator APIs/panels and later operational work
+remain pending. The new database migration is un-applied in this environment.
 This is **not a claim that the entire DevFlow 2.0 mission is finished**. The checklist
 in `UPGRADE_PLAN.md` records the remaining phases and open release gates.
 
@@ -1054,3 +1055,32 @@ Commit to create locally: `docs: reconcile milestone status and operational acce
 The owner must confirm the commit before step 2 starts. No new commit hash is claimed
 here; Git remains authoritative. M3.5 remains incomplete until required automated,
 browser, deployment and separately authorized live acceptance evidence is recorded.
+
+## M3.5 step 2 — durable worker-health persistence (2026-11-15)
+
+Starting branch feat/m3-5-operational-readiness; owner commits f1a1a2b and f101e28
+verified with a clean tree. This focused change adds one additive operational
+signal model/migration, the recorder/classifier, worker lifecycle wiring and
+unit/PostgreSQL tests. Administrator endpoints/panels remain steps 3–4.
+
+Signals separate independent liveness, completed polling, connection-specific
+attempt progress and terminal lifecycle. Bounded runs never assert continuous
+availability; idle workers need no successful deliveries to be healthy. Fresh
+heartbeat without recent polling is insufficient evidence. Multiple process runs
+remain distinct, stale replicas cannot overwrite replacement signals, and ended
+runs cannot be revived by late heartbeats. Evidence states are not automatic alerts.
+
+Queue claim/renew/recovery code is unchanged. Delivery/automation functions expose
+only an optional synchronous in-memory attempt observer after their transaction
+settles; task status/version/approval/audit logic is unchanged. Monitoring database
+writes are outside job transactions and preserve project-before-connection lock
+ordering. Mid-run monitoring failures are sanitized and cannot cause job replay.
+
+No migration, worker or live call was run against application data, live rules or
+DEV-002. The isolated devflow_test connection probe failed at localhost:5433; new
+PostgreSQL cases are written but unexecuted. The additive migration is un-applied
+here. Unit/static/build results and owner-local verification commands are recorded
+in VERIFICATION.md. Live/database acceptance is not substituted with mock evidence.
+
+Prepared commit: `feat(ops): persist scoped worker health signals`. Wait for the
+owner's successful commit confirmation before step 3. M3.5 remains incomplete.

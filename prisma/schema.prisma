@@ -120,6 +120,7 @@ model Project {
   githubObjects           GitHubObject[]
   githubWorkflowRules     GitHubWorkflowRule[]
   githubWorkflowRevisions GitHubWorkflowRuleRevision[]
+  githubWorkerSignals     GitHubWorkerSignal[]
 
   @@unique([workspaceId, id])
   @@index([workspaceId, archivedAt])
@@ -406,6 +407,7 @@ model GitHubRepositoryConnection {
   project                Project                   @relation(fields: [workspaceId, projectId], references: [workspaceId, id], onDelete: Cascade)
   connectedBy            User?                     @relation(fields: [connectedById], references: [id], onDelete: SetNull)
   deliveries             GitHubWebhookDelivery[]
+  workerSignals          GitHubWorkerSignal[]
 
   @@unique([projectId, id])
   @@unique([projectId, repositoryId, id])
@@ -633,4 +635,39 @@ model GitHubWorkflowExecution {
   @@index([projectId, repositoryId, eventKey])
   @@index([taskId])
   @@index([deliveryId])
+}
+
+// Operational evidence only; never grants a queue lease or permission to mutate tasks.
+enum GitHubWorkerMode {
+  CONTINUOUS
+  BOUNDED
+}
+
+enum GitHubWorkerRunState {
+  RUNNING
+  STOPPED
+  COMPLETED
+  FAILED
+}
+
+model GitHubWorkerSignal {
+  runId        String
+  connectionId String
+  workspaceId  String
+  projectId    String
+  mode         GitHubWorkerMode
+  state        GitHubWorkerRunState       @default(RUNNING)
+  startedAt    DateTime                   @default(now())
+  heartbeatAt  DateTime                   @default(now())
+  polledAt     DateTime?
+  progressAt   DateTime?
+  idleAt       DateTime?
+  endedAt      DateTime?
+  // Stored with evidence so readers do not guess a deployment's poll frequency.
+  staleAfterMs Int
+  connection   GitHubRepositoryConnection @relation(fields: [projectId, connectionId], references: [projectId, id], onDelete: Cascade, map: "GitHubWorkerSignal_connection_fkey")
+  project      Project                    @relation(fields: [workspaceId, projectId], references: [workspaceId, id], onDelete: Cascade, map: "GitHubWorkerSignal_project_fkey")
+
+  @@id([runId, connectionId])
+  @@index([workspaceId, projectId, connectionId, heartbeatAt], map: "GitHubWorkerSignal_scope_heartbeat_idx")
 }

@@ -1,6 +1,92 @@
 # DevFlow local verification
 
-## Current baseline — M3.5 step 1 (2026-11-15)
+## Current change — M3.5 step 2: durable worker signals (2026-11-15)
+
+Owner commits verified: f1a1a2b (baseline docs), f101e28 (formatting cleanup).
+Branch feat/m3-5-operational-readiness and working tree were clean before this
+change. Only the scoped health persistence/runtime/test/docs change is prepared;
+no Git writes are attempted here. Wait for the owner commit before step 3.
+
+### Actual checks
+
+| Check                   | Executed command                                                                                                                      | Result                                                                                                                       |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Prisma schema           | node_modules/.bin/prisma validate                                                                                                     | Passed                                                                                                                       |
+| Prisma client           | node_modules/.bin/prisma generate                                                                                                     | Passed; no database writes                                                                                                   |
+| Additive schema diff    | prisma migrate diff --from-schema-datamodel /tmp/devflow-m35-health-before.prisma --to-schema-datamodel prisma/schema.prisma --script | Passed; previous HEAD schema compared without a database. Only new enums/table/index/FKs; migration also adds two checks.    |
+| Full TypeScript         | node_modules/.bin/tsc --noEmit --pretty false                                                                                         | Passed                                                                                                                       |
+| Core TypeScript         | node_modules/.bin/tsc --noEmit -p tsconfig.core.json --pretty false                                                                   | Passed                                                                                                                       |
+| Worker compilation      | node_modules/.bin/tsc -p tsconfig.worker.json --pretty false                                                                          | Passed; no worker started                                                                                                    |
+| ESLint                  | node_modules/.bin/eslint .                                                                                                            | Passed                                                                                                                       |
+| Full unit/DOM suite     | AI_API_KEY= GITHUB_CLIENT_ID= GITHUB_CLIENT_SECRET= node_modules/.bin/vitest run --pool=forks                                         | **340 passed, 38 files, 0 failed**; includes 14 new health cases                                                             |
+| Production build        | AI_API_KEY= GITHUB_CLIENT_ID= GITHUB_CLIENT_SECRET= node_modules/.bin/next build --webpack                                            | Passed                                                                                                                       |
+| Formatting/diff         | node_modules/.bin/prettier --check .; git diff --check                                                                                | Passed                                                                                                                       |
+| PostgreSQL              | Guarded connection-only probe below                                                                                                   | Blocked: localhost:5433/devflow_test unreachable. Seven new integration cases **not executed**; no integration pass claimed. |
+| Browser/live acceptance | Not run for this backend-only step                                                                                                    | Prior sandbox socket restriction remains; no visual/live acceptance claimed.                                                 |
+
+One concurrent TypeScript attempt hit missing generated .next/types files while
+webpack regenerated them. After build completion, full/core/worker TypeScript and
+ESLint were rerun sequentially; the table records those final results. No config
+or source change was made to conceal that check-order failure.
+
+Installed binaries avoid the documented pnpm sandbox auto-install restriction;
+no dependency or lockfile changes. Forked Vitest workers use the successful pool
+from the preceding formatting change. Logs are /tmp/devflow-m35-health-unit-final.log,
+/tmp/devflow-m35-health-build.log, and /tmp/devflow-m35-health-schema-diff.sql.
+
+The probe loaded local dotenv configuration, validated distinct app/test database
+names with requireTestDatabase, required pathname exactly /devflow_test, constructed
+a separate PrismaClient with datasourceUrl set to that test URL, and attempted
+only $connect/$disconnect. It reported TEST_DATABASE_UNREACHABLE. No migration,
+reset, seed, application database connection, worker or external request was run.
+No prohibited network workaround or repeated database attempt followed. The seven
+new PostgreSQL cases remain unexecuted, not passed or an executed skip count.
+Existing tests are also not rerun against an inaccessible database in this step.
+
+### Fedora-local isolated verification
+
+Use the existing ignored .env, with distinct DATABASE_URL and TEST_DATABASE_URL.
+This fail-closed command applies additive migrations **only to devflow_test**;
+it does not create, reset, seed or touch the application database. Review the new
+migration before running it. The sandbox has not verified this DDL against a server.
+
+```bash
+node --import tsx <<'NODE'
+require('dotenv/config');
+const { requireTestDatabase } = require('./tests/database-config.ts');
+const { spawnSync } = require('node:child_process');
+const target = requireTestDatabase(process.env.DATABASE_URL, process.env.TEST_DATABASE_URL);
+if (target.pathname !== '/devflow_test') throw Error('Only devflow_test permitted');
+console.log('Verified isolated migration target', target.hostname, target.port, target.pathname);
+const result = spawnSync(process.execPath, ['node_modules/prisma/build/index.js', 'migrate', 'deploy'], {
+  env: { ...process.env, DATABASE_URL: target.href }, stdio: 'inherit',
+});
+if (result.error || result.status !== 0) process.exitCode = 1;
+NODE
+# Continue only if migration succeeded:
+pnpm db:generate
+AI_API_KEY= GITHUB_CLIENT_ID= GITHUB_CLIENT_SECRET= pnpm exec vitest run --config vitest.integration.config.ts tests/github-worker-health.integration.test.ts
+AI_API_KEY= GITHUB_CLIENT_ID= GITHUB_CLIENT_SECRET= pnpm test:integration
+AI_API_KEY= GITHUB_CLIENT_ID= GITHUB_CLIENT_SECRET= pnpm exec vitest run --pool=forks
+pnpm typecheck
+pnpm typecheck:core
+pnpm lint
+pnpm format:check
+pnpm github:worker:build
+AI_API_KEY= GITHUB_CLIENT_ID= GITHUB_CLIENT_SECRET= pnpm build:webpack
+```
+
+All new database fixtures are isolated and scoped to their test connection; they
+stub external fetch and only process a fixture ping. The full integration suite
+retains its existing test-database guard. Do not start a worker against application
+data or apply the application migration as part of this test procedure. Only
+consider manual application deployment after isolated verification and review.
+Source migration 202611150003_github_worker_health is additive and empty on install;
+old workers simply provide no health evidence until the updated worker is deployed.
+No API/panel feature, destructive retention, automation rule enablement or M3.5
+completion is claimed. See GITHUB_INTEGRATION.md for evidence state semantics.
+
+## Historical baseline — M3.5 step 1 (2026-11-15)
 
 Branch: `feat/m3-5-operational-readiness`. Starting source: `48d7b5c`
 (`test: add verification suites and implementation documentation`). The owner

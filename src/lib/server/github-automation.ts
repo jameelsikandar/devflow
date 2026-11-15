@@ -289,7 +289,10 @@ async function applyExecution(
     to: next.to,
   });
 }
-export async function processNextGitHubAutomation(options: WorkerOptions) {
+export async function processNextGitHubAutomation(
+  options: WorkerOptions,
+  onAttempt?: (connectionId: string) => void,
+) {
   const candidates = await db.gitHubWorkflowExecution.findMany({
     where: {
       state: 'PENDING',
@@ -320,7 +323,6 @@ export async function processNextGitHubAutomation(options: WorkerOptions) {
           reason: result.reason,
         }),
       );
-      return true;
     } catch (error) {
       const failure = automationFailure(error);
       // The application transaction rolled back. Persist bounded failure scheduling separately;
@@ -350,8 +352,10 @@ export async function processNextGitHubAutomation(options: WorkerOptions) {
           reason: failure.code,
         }),
       );
-      return true;
     }
+    // Report an attempt only after the action/failure transaction has settled.
+    onAttempt?.(candidate.connectionId);
+    return true;
   }
   return false;
 }
