@@ -6,7 +6,8 @@ The audit, roadmap/dependency implementation (Milestone 1), and agentic AI proje
 manager (Milestone 2) are implemented. Milestone 3 includes M3.1 connections,
 M3.2 event processing, M3.3 workflow definitions/dry-run previews, and M3.4
 confirmed future-event status automation. Database/browser/live automation acceptance
-remains open in this sandbox; M3.5 is not implemented.
+remains open in this sandbox. M3.5 is approved and in progress at step 1
+(baseline/documentation only); its operational features are not implemented yet.
 This is **not a claim that the entire DevFlow 2.0 mission is finished**. The checklist
 in `UPGRADE_PLAN.md` records the remaining phases and open release gates.
 
@@ -219,20 +220,20 @@ attempt, but those features cannot be declared verified without the blocked suit
 Follow [VERIFICATION.md](VERIFICATION.md) for exact Fedora commands, safe database
 setup, expected artifacts and visual acceptance criteria.
 
-## Remaining mission and external configuration
+## Remaining mission and external configuration (reconciled at M3.5 baseline)
 
-| Area                                               | Current state                                                                                     |
-| -------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| Roadmaps/dependencies                              | Source implemented; unit/schema/build checks pass; API concurrency and browser release gates open |
-| Agentic AI tools/approvals/sprints/reports/history | Implemented with available checks passing; live provider/API/browser gates remain open            |
-| GitHub issues/CI/webhooks/task linking/merge rules | Planned; existing OAuth/repository/commit/open-PR integration preserved                           |
-| Collaborative documents                            | Not implemented; requires CRDT/editor integration and authenticated transport                     |
-| Expanded engineering analytics                     | Planned; existing actual-record analytics preserved                                               |
-| Workflow engine/background jobs                    | Not implemented; worker/outbox/retry infrastructure needed                                        |
-| Channels/DMs/attachments                           | Not implemented; conversation ACL and storage design required                                     |
-| Server full-text global search                     | Planned; existing keyboard palette preserved with roadmap navigation added                        |
-| Offline/PWA sync                                   | Not implemented; IndexedDB/version conflict design recorded in plan                               |
-| Full 2.0 redesign/onboarding                       | Not complete; roadmap extends existing responsive dark/light tokens and components                |
+| Area                                               | Current state                                                                                        |
+| -------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Roadmaps/dependencies                              | Source implemented; unit/schema/build checks pass; API concurrency and browser release gates open    |
+| Agentic AI tools/approvals/sprints/reports/history | Implemented with available checks passing; live provider/API/browser gates remain open               |
+| GitHub objects/webhooks/task linking/PR rules      | M3.1–M3.4 implemented; M3.5 operational acceptance and hardening in progress                         |
+| Collaborative documents                            | Not implemented; requires CRDT/editor integration and authenticated transport                        |
+| Expanded engineering analytics                     | Planned; existing actual-record analytics preserved                                                  |
+| Workflow engine/background jobs                    | PostgreSQL worker, PR status rules and durable execution implemented; generic actions/email deferred |
+| Channels/DMs/attachments                           | Not implemented; conversation ACL and storage design required                                        |
+| Server full-text global search                     | Planned; existing keyboard palette preserved with roadmap navigation added                           |
+| Offline/PWA sync                                   | Not implemented; IndexedDB/version conflict design recorded in plan                                  |
+| Full 2.0 redesign/onboarding                       | Not complete; roadmap extends existing responsive dark/light tokens and components                   |
 
 Roadmaps require PostgreSQL and the new migration, with no third-party credentials.
 Existing AI requires server `AI_API_KEY`, `AI_BASE_URL`, `AI_MODEL`; GitHub requires
@@ -1003,3 +1004,53 @@ passed. All 82 integration tests were attempted against validated devflow_test;
 six connection hooks failed at localhost:5433 and every test was skipped. This is
 not an 82/82 database pass. Rerun the unchanged 82-test suite on Fedora with the
 already-migrated isolated database using the latest VERIFICATION.md commands.
+
+## M3.5 step 1 — baseline verification and documentation reconciliation (2026-11-15)
+
+Starting state: `feat/m3-5-operational-readiness` at `48d7b5c`, with a clean working
+tree and empty index. The owner created the branch locally. The approved workflow
+requires one logical change, relevant checks, exact local commit commands, then a
+pause until the owner confirms that commit. No staging, commit or branch-write
+operation is attempted in the sandbox.
+
+The baseline reproduced 326 passing unit/DOM cases across 37 files; schema
+validation/client generation, ESLint, worker compilation and webpack build passed.
+Full/core TypeScript and final formatting are recorded in VERIFICATION.md. The
+existing isolated devflow_test target was validated before the database suite:
+six connection hooks failed at localhost:5433, all 82 cases skipped, zero passed.
+Playwright's server probe returned EPERM at 127.0.0.1:3100, the server exited 1,
+and zero browser tests or screenshots executed. Discovery lists 12 cases only.
+These are environment blockers, not confirmed application assertion failures.
+
+The repository-wide Prettier check was also executed and failed on four existing,
+unchanged files: prisma/seed.ts, src/lib/server/env.ts, src/lib/server/errors.ts and
+tests/core.test.ts. The four milestone documents pass their targeted formatting
+check. This source/test formatting failure is not hidden as an infrastructure skip
+and is not repaired inside the documentation commit. After the owner confirms step
+1, prepare a separate `chore: normalize baseline source formatting` change before
+claiming a green repository-wide format gate.
+
+This change updates only UPGRADE_PLAN.md, UPGRADE_REPORT.md, VERIFICATION.md and
+GITHUB_INTEGRATION.md. Current status now distinguishes implementation, historical
+verification records, present sandbox results and pending acceptance. Older test
+counts and owner-reported live observations are retained as dated evidence; none
+were silently converted into new passes. The older broad workflow-builder/email
+mission is explicitly deferred rather than folded into M3.5.
+
+No health model/API/UI, revalidation code, retention job, CI configuration, schema,
+migration, task service or worker behavior changed. M3.5 steps 2–9 remain pending.
+Retention remains policy/dependency analysis and dry-run reporting only; operational
+receipts, snapshots, evidence and audit records must not be deleted or archived.
+Connection revalidation will be explicit and administrator-authorized, with no
+silent identity or connection-state changes and no borrowing another user's token.
+
+No application database query/migration/reset/seed, live worker, live GitHub/Groq
+request, webhook creation, rule enablement or DEV-002 change was performed. The only
+attempted database suite was guarded to devflow_test. Browser artifacts were routed
+to /tmp so existing local reports/traces were preserved. No architecture change or
+external service is introduced by this documentation step.
+
+Commit to create locally: `docs: reconcile milestone status and operational acceptance gates`.
+The owner must confirm the commit before step 2 starts. No new commit hash is claimed
+here; Git remains authoritative. M3.5 remains incomplete until required automated,
+browser, deployment and separately authorized live acceptance evidence is recorded.

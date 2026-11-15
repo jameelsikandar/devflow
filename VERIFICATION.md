@@ -1,6 +1,130 @@
 # DevFlow local verification
 
-## Latest environment result
+## Current baseline — M3.5 step 1 (2026-11-15)
+
+Branch: `feat/m3-5-operational-readiness`. Starting source: `48d7b5c`
+(`test: add verification suites and implementation documentation`). The owner
+created the branch locally; initial branch/index/worktree checks were clean.
+This is baseline evidence before operational features, not M3.5 completion.
+M1–M3.4 implementation is accepted from the owner; fresh runtime acceptance is
+tracked separately. Earlier records below remain historical snapshots.
+
+### Actual results from this run
+
+Node: 22.23.1. Installed binaries were run directly, equivalent to the package's
+pnpm scripts, to avoid the previously documented sandbox package-store restrictions.
+No package installation or dependency update was needed.
+
+| Check                        | Executed command                                                                    | Actual result                                                            |
+| ---------------------------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| Prisma schema                | `node_modules/.bin/prisma validate`                                                 | Passed                                                                   |
+| Prisma client                | `node_modules/.bin/prisma generate`                                                 | Passed; code generation only                                             |
+| Unit/DOM                     | `node_modules/.bin/vitest run`                                                      | **326 passed, 37 files; 0 failed**                                       |
+| ESLint                       | `node_modules/.bin/eslint .`                                                        | Passed                                                                   |
+| Worker compilation           | `node_modules/.bin/tsc -p tsconfig.worker.json --pretty false`                      | Passed; worker not started                                               |
+| Webpack production           | `node_modules/.bin/next build --webpack`                                            | Passed                                                                   |
+| Full TypeScript              | `node_modules/.bin/tsc --noEmit --pretty false` after build/browser attempt         | Passed                                                                   |
+| Core TypeScript              | `node_modules/.bin/tsc --noEmit -p tsconfig.core.json --pretty false`               | Passed                                                                   |
+| Changed documentation format | Prettier check on the four files in this step                                       | Passed                                                                   |
+| Repository-wide formatting   | `node_modules/.bin/prettier --check .`                                              | **Failed: four pre-existing source/test style violations**, listed below |
+| PostgreSQL integration       | Guarded Vitest run with vitest.integration.config.ts and blank provider credentials | **6 connection-hook failures; all 82 tests skipped, 0 passed**           |
+| Playwright desktop/mobile    | Existing suite with separate /tmp output/report directories                         | **0 tests executed**; EPERM probing 127.0.0.1:3100; webServer exited 1   |
+| Browser discovery            | `node_modules/.bin/playwright test --list`                                          | **12 cases in 5 files**; discovery is not execution                      |
+
+The full-repository formatter reported exactly these unchanged files:
+
+- prisma/seed.ts
+- src/lib/server/env.ts
+- src/lib/server/errors.ts
+- tests/core.test.ts
+
+They match HEAD and were not modified by this step. This is an actual baseline
+quality failure, separate from the PostgreSQL/browser infrastructure blockers.
+No --write was run on them: preserve the documentation-only commit and address
+formatting in a separate focused change after the owner confirms this commit.
+A suitable follow-up message is `chore: normalize baseline source formatting`.
+Relevant formatting/type/unit checks must run for that change; do not report the
+repository-wide format gate green until its check actually passes.
+
+The database wrapper loaded the existing local configuration, called
+`requireTestDatabase`, and required exactly `/devflow_test` before invoking Vitest.
+Its sanitized target was **localhost:5433/devflow_test**. All six beforeAll hooks
+failed with Prisma initialization errors: cannot reach localhost:5433. No database
+assertions ran. This does not establish the test database's migration status or
+contradict the owner's earlier Fedora evidence that seven migrations were applied.
+No migration, reset, database creation or seed command was run in this baseline.
+
+The Playwright probe reported `connect EPERM 127.0.0.1:3100`; the configured server
+could not start. No browser assertions, screenshots or visual QA ran. Browser
+output was redirected to `/tmp/devflow-m35-baseline-browser-results` and the HTML
+report to `/tmp/devflow-m35-baseline-playwright-report`, preserving existing local
+project reports/traces. No socket, Docker, alternate database or permission workaround
+was attempted after either infrastructure failure.
+
+Unit/build/test commands cleared AI_API_KEY and GitHub client configuration where
+applicable; database/browser fixtures need no live provider credentials. No live
+GitHub/Groq request, webhook creation, standalone worker, connection revalidation,
+automation-rule change or DEV-002 update was performed. Prisma generation and worker
+compilation are not database migrations or worker execution. Source/application,
+schema, migrations and test configuration remain unchanged; only milestone docs
+are being prepared for the first focused local commit.
+
+### Reproduce the baseline in a normal Fedora shell
+
+Use the already-migrated isolated devflow_test database. Keep DATABASE_URL and
+TEST_DATABASE_URL distinct in the ignored .env. Validate the target before tests;
+the commands below do not reset, reseed or migrate either database.
+
+```bash
+node --import tsx -e 'require("dotenv/config"); const {requireTestDatabase}=require("./tests/database-config.ts"); const u=requireTestDatabase(process.env.DATABASE_URL,process.env.TEST_DATABASE_URL); if(u.pathname!=="/devflow_test")throw Error("Only devflow_test permitted"); console.log("Verified isolated test database",u.hostname,u.port,u.pathname);'
+pnpm exec prisma validate
+pnpm db:generate
+pnpm lint
+AI_API_KEY= GITHUB_CLIENT_ID= GITHUB_CLIENT_SECRET= pnpm test
+pnpm github:worker:build
+AI_API_KEY= GITHUB_CLIENT_ID= GITHUB_CLIENT_SECRET= pnpm build:webpack
+pnpm typecheck
+pnpm typecheck:core
+AI_API_KEY= GITHUB_CLIENT_ID= GITHUB_CLIENT_SECRET= pnpm test:integration
+# Keep 3100 free; this starts only the existing isolated test server, not the worker.
+AI_API_KEY= GITHUB_CLIENT_ID= GITHUB_CLIENT_SECRET= PLAYWRIGHT_HTML_OPEN=never pnpm test:e2e --reporter=list,html
+pnpm exec prettier --check UPGRADE_PLAN.md UPGRADE_REPORT.md VERIFICATION.md GITHUB_INTEGRATION.md
+# This baseline command currently fails on the four listed unchanged files:
+pnpm format:check
+```
+
+For reproducibility, the sandbox browser invocation was:
+
+```bash
+AI_API_KEY= GITHUB_CLIENT_ID= GITHUB_CLIENT_SECRET= DEBUG=pw:webserver PLAYWRIGHT_HTML_OPEN=never PLAYWRIGHT_HTML_OUTPUT_DIR=/tmp/devflow-m35-baseline-playwright-report node_modules/.bin/playwright test --output=/tmp/devflow-m35-baseline-browser-results --reporter=list,html
+```
+
+The PostgreSQL invocation used this fail-closed wrapper (no URL secrets printed):
+
+```bash
+node --import tsx -e 'require("dotenv/config"); const {requireTestDatabase}=require("./tests/database-config.ts"); const u=requireTestDatabase(process.env.DATABASE_URL,process.env.TEST_DATABASE_URL); if(u.pathname!=="/devflow_test")throw Error("Only devflow_test permitted"); console.log("Verified isolated target",u.hostname,u.port,u.pathname); const r=require("node:child_process").spawnSync(process.execPath,["node_modules/vitest/vitest.mjs","run","--config","vitest.integration.config.ts"],{env:{...process.env,AI_API_KEY:"",GITHUB_CLIENT_ID:"",GITHUB_CLIENT_SECRET:""},stdio:"inherit"}); process.exitCode=r.status??1;'
+```
+
+### Current release and commit gates
+
+- TypeScript/lint/unit/build and changed-document formatting checks pass; the full
+  repository format check fails on four unchanged files. The database and browser commands
+  exited unsuccessfully at infrastructure setup; their assertions are unverified,
+  not application passes or confirmed assertion regressions.
+- Actual passing PostgreSQL/concurrency and desktop/mobile evidence is still required
+  for M3.5 acceptance. Do not substitute historical counts, discovery or mocks.
+- Health, scoped diagnostics, read-only retention reporting, CI and deployment
+  evidence are steps 2–9 and remain unimplemented in this first change.
+- Live lifecycle acceptance needs separate explicit approval or owner-run disposable
+  test scope. Existing credentials, rules, DEV-002 and production records are not
+  test fixtures. No real hook creation, merge, grant revocation or live automation
+  is authorized by running baseline checks.
+- Prepared commit: `docs: reconcile milestone status and operational acceptance gates`.
+  Only UPGRADE_PLAN.md, UPGRADE_REPORT.md, VERIFICATION.md and GITHUB_INTEGRATION.md
+  belong to this step. No staging/commit attempt occurs in the read-only sandbox.
+  **Wait for the owner's commit confirmation before starting step 2.**
+
+## Historical environment result — initial roadmap verification
 
 This execution sandbox cannot connect to PostgreSQL or listen for HTTP. Both TCP
 and Unix socket attempts return `EPERM`; Docker access is denied. A visible socket

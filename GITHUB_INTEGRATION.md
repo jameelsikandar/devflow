@@ -1,4 +1,4 @@
-# GitHub integration — M3.1 through M3.4
+# GitHub integration — M3.1–M3.4 implementation and M3.5 readiness
 
 M3.1 adds secure repository connections and a durable webhook inbox. M3.2 adds a
 separate durable worker, read-only GitHub activity and task associations. Neither
@@ -7,6 +7,15 @@ see the latest M3.3 section for setup and safety semantics.
 M3.4 now adds explicitly confirmed future-event status automation. Its latest
 section below supersedes earlier preview-only deployment notes. Existing OAuth,
 repository browsing, commit history and open-PR reads are retained.
+
+## Current operational status — M3.5 step 1
+
+M3.1–M3.4 source is implemented. M3.5 is approved for operational acceptance and
+hardening; this first change establishes baseline evidence and reconciles docs only.
+Existing processing controls, task links, previews and confirmed PR automation retain
+their current behavior. No new health monitor, diagnostic operation, retention logic
+or CI job is implemented in this step. The acceptance ledger below is current;
+earlier phase sections remain historical implementation/setup records.
 
 ## Architecture decision
 
@@ -753,3 +762,50 @@ These are manual owner actions; the agent did not perform them or claim live suc
 Real GitHub and browser acceptance remain local gates. Unit mocks/browser fixtures
 are not substitutes for this new-PR procedure. M3.5 operations/retention/alerting,
 additional actions/conditions and unrelated milestones remain out of scope.
+
+## M3.5 operational acceptance ledger — baseline 2026-11-15
+
+The owner reports M1 through M3.4 complete. This ledger records the evidence available
+for the new operational milestone; it does not negate those implementation reports
+or infer fresh live acceptance from them. The current baseline uses branch
+`feat/m3-5-operational-readiness` at `48d7b5c`. Details: VERIFICATION.md.
+
+| Gate                                           | Evidence at this baseline                                                                                            | State                                                    |
+| ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| Unit/static/build regression                   | 326 unit tests; schema/client, lint, worker and webpack checks pass; type/format results recorded in VERIFICATION.md | Available baseline evidence                              |
+| Repository-wide formatting                     | Four unchanged source/test files fail the full formatter; changed milestone documents pass                           | Follow-up focused formatting change required             |
+| Real SQL/concurrency/rollback                  | Guarded devflow_test run cannot reach localhost:5433; six setup failures, 82 skipped                                 | Blocked here; actual local result required               |
+| Browser and visual acceptance                  | EPERM at localhost:3100 before server startup; 12 cases discovered, zero executed; no screenshots                    | Blocked here; desktop/mobile evidence required           |
+| Signed ingestion and task association          | Historical owner-verified ping/push and commit/task linking retained in earlier records                              | Historical evidence; no new live action performed        |
+| New eligible PR automation and redelivery      | M3.4 tests/runbook exist; no fresh M3.5 live execution evidence collected in this step                               | Pending separately authorized owner-run acceptance       |
+| Idle/unavailable/bounded/unknown worker health | Existing logs/queue data; lightweight scoped monitoring is the next approved implementation step                     | Pending implementation and acceptance                    |
+| Restart/recovery and revocation lifecycle      | Existing guards and mocked/integration scenarios; fresh operational process evidence not collected                   | Pending isolated and owner-run acceptance                |
+| Explicit connection diagnostics                | Current transport/grants reused; no new revalidation operation yet                                                   | Pending implementation; no automatic retarget/disconnect |
+| Retention impact                               | Current provenance/idempotency FKs identified; no cleanup introduced                                                 | Pending read-only report/policy; no deletion/archive     |
+| Isolated CI and deployment evidence            | Example worker unit/runbook exists; no M3.5 Actions workflow yet                                                     | Pending implementation/execution; no push authorized     |
+
+The next changes must reuse the existing PostgreSQL queue/executor and administrator
+panels, exposing only authorized, sanitized metadata. OAuth authorization, webhook
+verification and worker liveness are separate signals: one must not be fabricated
+from another. An idle worker, bounded run or missing evidence must not trigger a
+misleading failure claim. New health persistence, if needed, uses additive migrations
+first verified on isolated devflow_test; no production migration is automatic.
+
+Retention is read-only policy, dependency analysis and dry-run impact reporting.
+Delivery uniqueness, semantic claims, immutable observations, task-link evidence,
+rule snapshots and machine activity are protected data, not blanket TTL candidates.
+No records may be removed or archived as part of this milestone. Existing failed
+delivery retry controls remain authorized and bounded; no diagnostic may replay
+processed/historical events or force a terminal task execution.
+
+Fresh live lifecycle acceptance must use an explicitly authorized disposable test
+scope. The existing M3.4 DEV-002 procedure documents earlier acceptance instructions;
+it is not standing authorization to modify DEV-002 or enable its live rule. The
+agent will not use live credentials, create hooks, revoke grants, merge PRs, enable
+rules or silently change repository identity/connection state. Required external
+actions remain owner-run or need separate explicit approval.
+
+Step 1 pauses for the owner's documentation commit confirmation. M3.5 remains open
+until the required tests and real acceptance gates are actually satisfied. Generic
+workflow builders/email/actions, Redis, a GitHub App migration and M4 collaborative
+documentation are outside the approved operational scope.
