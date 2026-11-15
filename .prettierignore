@@ -1,0 +1,12 @@
+node_modules
+node_modules.backup-*
+.next
+**/.next
+pnpm-lock.yaml
+playwright-report
+test-results
+
+.worker/
+
+# Preserve the original README as an unchanged historical document.
+docs/README_LEGACY.md

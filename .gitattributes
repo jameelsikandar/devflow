@@ -1,0 +1,9 @@
+# Keep source and SQL migrations consistent across developer platforms.
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.pdf binary
