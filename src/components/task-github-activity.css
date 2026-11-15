@@ -1,0 +1,88 @@
+.task-github-activity {
+  grid-column: 1 / -1;
+  min-width: 0;
+  padding: 20px;
+  border-top: 1px solid var(--border);
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+.task-github-activity > header,
+.task-github-object,
+.task-github-object a,
+.task-github-activity h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.task-github-activity > header {
+  justify-content: space-between;
+}
+.task-github-activity h3 {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+}
+.task-github-activity header p {
+  margin: 4px 0 0;
+  color: var(--secondary);
+  font-size: 11px;
+}
+.task-github-activity ul {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+}
+.task-github-activity li {
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
+}
+.task-github-object {
+  flex-wrap: wrap;
+  font-size: 12px;
+}
+.task-github-object a {
+  min-width: 0;
+  color: var(--accent);
+  border-radius: 4px;
+}
+.task-github-object a:hover {
+  text-decoration: underline;
+}
+.task-github-object a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+}
+.task-github-object code {
+  font-size: 11px;
+}
+.task-github-repository {
+  display: block;
+  margin-top: 4px;
+  color: var(--secondary);
+  font-size: 11px;
+}
+.task-github-record small,
+.task-github-disconnected {
+  display: block;
+  margin-top: 4px;
+  color: var(--secondary);
+  font-size: 10px;
+}
+.task-github-state {
+  margin: 14px 0 0;
+  color: var(--secondary);
+  font-size: 12px;
+}
+.task-github-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  color: var(--secondary);
+  font-size: 10px;
+}
+.task-github-indicator {
+  color: var(--secondary);
+  white-space: nowrap;
+}
