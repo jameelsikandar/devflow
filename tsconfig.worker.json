@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "noEmit": false,
+    "incremental": false,
+    "outDir": ".worker",
+    "rootDir": ".",
+    "plugins": [],
+    "declaration": false,
+    "sourceMap": false
+  },
+  "include": ["scripts/github-worker.ts"],
+  "exclude": ["node_modules", ".next", ".worker"]
+}
