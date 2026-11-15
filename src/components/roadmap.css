@@ -1,0 +1,532 @@
+.roadmap-view {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+}
+.roadmap-project-picker,
+.roadmap-project-picker label,
+.roadmap-project-picker > span {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-direction: row;
+}
+.roadmap-project-picker {
+  justify-content: space-between;
+  color: var(--secondary);
+}
+.roadmap-project-picker select {
+  min-width: 200px;
+}
+.roadmap-project-picker > span {
+  font-size: 11px;
+  color: var(--muted);
+}
+.roadmap-summary {
+  display: flex;
+  gap: 32px;
+  align-items: center;
+  padding: 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.roadmap-summary h2 {
+  margin: 6px 0;
+  font-size: 22px;
+  letter-spacing: -0.6px;
+}
+.roadmap-summary p {
+  margin: 0;
+  color: var(--secondary);
+  font-size: 12px;
+}
+.roadmap-progress {
+  margin-left: auto;
+  display: grid;
+  gap: 8px;
+  min-width: 140px;
+}
+.roadmap-progress strong {
+  font-size: 26px;
+  font-weight: 500;
+}
+.roadmap-progress progress {
+  width: 100%;
+  height: 5px;
+  accent-color: var(--accent);
+  border: 0;
+  border-radius: 9px;
+  overflow: hidden;
+}
+.roadmap-progress progress::-webkit-progress-bar {
+  background: var(--border);
+}
+.roadmap-progress progress::-webkit-progress-value {
+  background: var(--accent);
+}
+.roadmap-deadline {
+  display: grid;
+  grid-template-columns: 20px auto;
+  column-gap: 10px;
+  align-items: center;
+  border-left: 1px solid var(--border);
+  padding-left: 25px;
+}
+.roadmap-deadline > svg {
+  color: var(--accent);
+  grid-row: span 2;
+}
+.roadmap-deadline strong {
+  font-size: 18px;
+  font-weight: 500;
+}
+.roadmap-deadline span {
+  color: var(--muted);
+  font-size: 10px;
+  grid-column: 2;
+}
+.roadmap-toolbar {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  padding: 16px 18px;
+  flex-wrap: wrap;
+}
+.roadmap-toolbar .segmented button {
+  display: inline-flex;
+  gap: 7px;
+  align-items: center;
+}
+.roadmap-date-navigation {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.roadmap-date-navigation > span {
+  margin-left: 6px;
+  color: var(--secondary);
+  font-size: 11px;
+}
+.roadmap-critical-toggle {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  margin-left: auto;
+  color: var(--secondary);
+  font-size: 11px;
+  flex-direction: row;
+}
+.roadmap-critical-toggle input,
+.roadmap-milestone-input input {
+  accent-color: var(--accent);
+  width: 14px;
+  height: 14px;
+  min-height: 0;
+  padding: 0;
+}
+.roadmap-toolbar > select {
+  width: auto;
+}
+.roadmap-help {
+  color: var(--muted);
+  font-size: 11px;
+  margin: 0;
+  padding: 0 20px 14px;
+}
+.roadmap-scroll {
+  max-height: 650px;
+  overflow: auto;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.roadmap-canvas {
+  position: relative;
+  min-width: 100%;
+}
+.roadmap-axis {
+  display: flex;
+  height: 48px;
+  position: sticky;
+  top: 0;
+  z-index: 8;
+  background: var(--surface-raised);
+  border-bottom: 1px solid var(--border);
+}
+.roadmap-axis-label {
+  width: 260px;
+  flex-shrink: 0;
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: var(--surface-raised);
+  border-right: 1px solid var(--border);
+  padding: 16px 20px;
+  font-size: 9px;
+  letter-spacing: 1.2px;
+  color: var(--muted);
+}
+.roadmap-axis > div {
+  position: relative;
+}
+.roadmap-axis > div > span {
+  position: absolute;
+  padding: 16px 6px;
+  border-left: 1px solid var(--border);
+  color: var(--secondary);
+  font-size: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.roadmap-rows {
+  position: relative;
+}
+.roadmap-row {
+  height: 54px;
+  display: flex;
+  border-bottom: 1px solid var(--border);
+}
+.roadmap-row:last-child {
+  border-bottom: 0;
+}
+.roadmap-row-selected {
+  background: var(--accent-bg);
+}
+.roadmap-task-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 260px;
+  flex-shrink: 0;
+  text-align: left;
+  padding: 7px 18px;
+  border-right: 1px solid var(--border);
+  position: sticky;
+  left: 0;
+  z-index: 6;
+  background: var(--surface);
+}
+.roadmap-task-label:hover {
+  background: var(--surface-hover);
+}
+.roadmap-row-selected .roadmap-task-label {
+  background: var(--accent-bg);
+  box-shadow: inset 2px 0 var(--accent);
+}
+.roadmap-task-label > svg {
+  flex-shrink: 0;
+  color: var(--accent);
+}
+.roadmap-task-label > span {
+  min-width: 0;
+}
+.roadmap-task-label small {
+  display: block;
+  font-size: 9px;
+  color: var(--muted);
+}
+.roadmap-task-label strong {
+  display: block;
+  font-size: 11px;
+  font-weight: 500;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.roadmap-track {
+  position: relative;
+  overflow: hidden;
+  background-image: linear-gradient(to right, var(--border) 1px, transparent 1px);
+}
+.roadmap-bar {
+  height: 28px;
+  top: 13px;
+  position: absolute;
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--surface-hover);
+  color: var(--secondary);
+  z-index: 2;
+  min-width: 14px;
+}
+.roadmap-bar-critical {
+  background: var(--accent-bg);
+  border-color: var(--accent-strong);
+  color: var(--accent);
+}
+.roadmap-bar-overdue {
+  border-color: var(--red);
+}
+.roadmap-bar-done {
+  background: var(--surface-raised);
+  color: var(--green);
+  border-color: var(--green);
+}
+.roadmap-bar-dragging {
+  z-index: 7;
+  box-shadow: 0 3px 18px #0004;
+}
+.roadmap-bar-grip {
+  width: 17px;
+  padding: 0;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  touch-action: none;
+  cursor: grab;
+}
+.roadmap-bar-title {
+  font-size: 10px;
+  text-align: left;
+  flex: 1;
+  padding: 0 5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+.roadmap-bar-milestone {
+  background: none;
+  border: 0;
+  min-width: 30px;
+  overflow: visible;
+}
+.roadmap-bar-milestone .roadmap-bar-title {
+  padding: 0;
+  overflow: visible;
+}
+.roadmap-unscheduled {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  position: absolute;
+  top: 14px;
+  left: 12px;
+  font-size: 10px;
+  height: 25px;
+  border: 1px dashed var(--border);
+  border-radius: 4px;
+  padding: 0 8px;
+  background: var(--surface);
+}
+.roadmap-overlay {
+  position: absolute;
+  top: 0;
+  pointer-events: none;
+  z-index: 4;
+  overflow: hidden;
+}
+.roadmap-connector {
+  color: var(--muted);
+  opacity: 0.6;
+}
+.roadmap-connector-conflict {
+  color: var(--red);
+  opacity: 1;
+  stroke-dasharray: 4 3;
+}
+.roadmap-today {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-left: 1px dashed var(--accent);
+  z-index: 1;
+  opacity: 0.8;
+}
+.roadmap-today span {
+  position: absolute;
+  top: 0;
+  left: 4px;
+  font-size: 8px;
+  color: var(--accent);
+}
+.roadmap-legend {
+  padding: 14px 20px;
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  font-size: 10px;
+  color: var(--muted);
+}
+.roadmap-legend > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.roadmap-legend i {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+}
+.roadmap-legend-critical {
+  background: var(--accent-strong);
+}
+.roadmap-legend-overdue {
+  background: var(--red);
+}
+.roadmap-details-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 20px;
+}
+.roadmap-editor {
+  min-width: 0;
+}
+.roadmap-schedule-form,
+.roadmap-dependency-form {
+  padding: 0 22px 20px;
+}
+.roadmap-editor-task {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-align: left;
+  margin-bottom: 20px;
+  color: var(--accent);
+  font-size: 12px;
+}
+.roadmap-schedule-form fieldset {
+  padding: 0;
+  margin: 0;
+  border: 0;
+  min-width: 0;
+}
+.roadmap-schedule-form .form-grid {
+  margin-bottom: 15px;
+}
+.roadmap-schedule-form label,
+.roadmap-dependency-form label {
+  display: grid;
+  gap: 7px;
+  color: var(--secondary);
+  font-size: 11px;
+  min-width: 0;
+}
+.roadmap-schedule-form label.roadmap-milestone-input {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+  flex-direction: row;
+}
+.roadmap-editor-actions {
+  display: flex;
+  gap: 10px;
+}
+.roadmap-dependency-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 15px;
+}
+.roadmap-dependency-form button {
+  grid-column: 1 / -1;
+  justify-self: start;
+}
+.roadmap-dependency-form select {
+  width: 100%;
+}
+.roadmap-dependencies {
+  list-style: none;
+  margin: 0;
+  padding: 0 22px 20px;
+  max-height: 220px;
+  overflow: auto;
+}
+.roadmap-dependencies li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-top: 1px solid var(--border);
+  padding: 8px 0;
+  font-size: 11px;
+  color: var(--secondary);
+}
+.roadmap-dependencies li > span {
+  flex: 1;
+  overflow-wrap: anywhere;
+}
+.roadmap-dependencies li svg {
+  display: inline;
+  vertical-align: middle;
+}
+.roadmap-editor > .form-error {
+  padding: 0 22px;
+}
+.roadmap-insights {
+  display: grid;
+  gap: 14px;
+}
+.roadmap-insights > div {
+  display: flex;
+  gap: 12px;
+  color: var(--muted);
+  padding: 16px 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.roadmap-insights svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.roadmap-insights strong {
+  color: var(--secondary);
+  font-size: 12px;
+  font-weight: 500;
+}
+.roadmap-insights p,
+.roadmap-insights li {
+  margin: 4px 0 0;
+  font-size: 11px;
+}
+.roadmap-insights .roadmap-warning,
+.roadmap-warning strong {
+  color: var(--red);
+}
+@media (max-width: 1100px) {
+  .roadmap-summary {
+    gap: 18px;
+    flex-wrap: wrap;
+  }
+  .roadmap-critical-toggle {
+    margin-left: 0;
+  }
+  .roadmap-details-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 720px) {
+  .roadmap-summary {
+    padding: 18px;
+  }
+  .roadmap-summary > div:first-child {
+    width: 100%;
+  }
+  .roadmap-progress {
+    margin-left: 0;
+    flex: 1;
+  }
+  .roadmap-project-picker {
+    flex-wrap: wrap;
+  }
+  .roadmap-project-picker > span {
+    display: none;
+  }
+  .roadmap-toolbar {
+    gap: 10px;
+  }
+  .roadmap-date-navigation {
+    flex-wrap: wrap;
+  }
+  .roadmap-date-navigation > span {
+    font-size: 10px;
+  }
+  .roadmap-dependency-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
