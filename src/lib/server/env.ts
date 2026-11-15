@@ -5,7 +5,8 @@ const schema = z.object({
     .string()
     .url()
     .refine(
-      (value) => URL.canParse(value) && ['postgresql:', 'postgres:'].includes(new URL(value).protocol),
+      (value) =>
+        URL.canParse(value) && ['postgresql:', 'postgres:'].includes(new URL(value).protocol),
       'DATABASE_URL must be a PostgreSQL URL',
     ),
   APP_URL: z.string().url().default('http://localhost:3000'),

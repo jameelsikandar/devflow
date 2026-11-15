@@ -14,7 +14,7 @@ const task = (values: Partial<Task>): Task =>
     createdAt: '2026-11-10T12:00:00.000Z',
     priority: 'MEDIUM',
     ...values,
-  } as Task);
+  }) as Task;
 describe('database-derived analytics', () => {
   it('excludes archived projects and avoids overdue completed tasks', () => {
     const result = analytics(

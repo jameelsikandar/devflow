@@ -142,8 +142,8 @@ async function main() {
             status === 'DONE'
               ? 'completed'
               : status === 'IN_REVIEW'
-              ? 'requested a review for'
-              : 'made progress on'
+                ? 'requested a review for'
+                : 'made progress on'
           } ${task.title}`,
           createdAt: new Date(Date.now() - (i + 1) * 37 * 60000),
         },
