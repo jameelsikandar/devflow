@@ -7,6 +7,22 @@ separate operator authorization. Preserve DEV-002 and its history. Current gates
 and evidence are in [M3.5 acceptance](M3_5_ACCEPTANCE.md) and
 [verification](../VERIFICATION.md).
 
+## Current use and evidence scope
+
+DevFlow is a local Fedora Linux 44 application using Docker PostgreSQL; it has
+**not been deployed to production**. M3.5/runbooks and typography were merged through
+[PR #1](https://github.com/jameelsikandar/devflow/pull/1) into main squash d21dc1a. The owner reports
+successful PR #1 hosted CI and earlier local 485 unit/UI, 124 SQL and 12 Playwright
+passes. Those results do not establish a separate complete rerun on d21dc1a.
+
+This runbook's deployment commands describe future procedures, not actions already
+performed. Local backup/key-restore, rollback and supervised worker recovery
+rehearsals remain unverified, as do required disposable GitHub lifecycle exercises.
+Production target configuration, migration rollout and smoke checks are future
+production gates; they are not failures of an existing production deployment.
+See the acceptance checklist for remaining evidence and approvals. This Step 1
+reconciliation runs no commands from the operational procedures below.
+
 ## Architecture and prerequisites
 
 Deploy one versioned release containing the Next.js Node application and a separate

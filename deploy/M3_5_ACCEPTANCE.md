@@ -1,46 +1,68 @@
 # M3.5 operational acceptance checklist
 
-**Status: implementation through Step 8 is committed; Step 9 documentation is
-prepared. M3.5 acceptance remains OPEN.** This checklist does not authorize a push,
-merge, deployment, worker start, new webhook, rule enablement or DEV-002 change.
-Runbooks describe future operator actions. Preserve existing connections/rules/task
-history; use a separately approved disposable scope for active fault/live tests.
+**Status: M3.5 implementation/runbooks and typography are squash-merged into main
+at d21dc1a via [PR #1](https://github.com/jameelsikandar/devflow/pull/1). PR #1 GitHub Actions passed,
+as reported by the owner. M3.5 operational acceptance remains OPEN.**
 
-## Evidence ledger — 2026-11-18
+## Current state — verification evidence reconciliation
+
+- DevFlow runs locally on Fedora Linux 44, with Docker PostgreSQL development and
+  isolated test databases. **Production deployment has not started.**
+- Historical verification: 485 unit/UI tests across 50 files, 124 PostgreSQL tests
+  across 11 files, and owner-run Playwright 12/12 in 3.1 minutes on desktop/mobile
+  Chromium. The owner reports improved readability at normal browser zoom.
+- PR #1 hosted CI succeeded; no CI run ID/URL, tested SHA, additional test totals or
+  verification date is supplied here. The PR link is not a CI-run link.
+- Current main and audit-branch base are d21dc1a. Historical runs and successful PR
+  checks are **not proof of a separate full rerun on the squash commit**.
+- Local backup/key restore, rollback and supervised worker/fault-recovery exercises,
+  disposable GitHub automation acceptance and detailed accessibility/zoom evidence
+  remain outstanding. Future production configuration/deployment gates are separate.
+
+This reconciliation occurs on audit/m3-5-operational-acceptance. No worker, DB,
+environment, connection, rule or task changes are authorized. Preserve DEV-002 and
+its history; active exercises require separately approved disposable scope.
+
+## Historical implementation ledger — originally recorded 2026-11-18
 
 | Step | Delivered change                 | Commit / evidence                                                                                      | Remaining acceptance                                                     |
 | ---- | -------------------------------- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------ |
 | 1    | Baseline and acceptance gates    | f1a1a2b; initial 326 unit cases; separate format-only f101e28                                          | Historical baseline, not current test totals                             |
-| 2    | Durable scoped worker signals    | 8fbdc3e; covered by current owner SQL suite                                                            | Real supervised interruption/restart evidence still open                 |
+| 2    | Durable scoped worker signals    | 8fbdc3e; covered by historical owner SQL suite                                                         | Real supervised interruption/restart evidence still open                 |
 | 3    | Administrator health API         | fb5d5b0; covered by owner SQL suite                                                                    | Real browser role/scope acceptance still open                            |
 | 4    | Health in existing GitHub panel  | e3f6ecf; owner observed Healthy idle and Unavailable                                                   | Browser automation/other evidence classifications remain open            |
 | 5    | Explicit connection revalidation | 09a32aa; owner verified repository/admin access with no retargeting/automation change                  | Failure lifecycle is mocked/SQL-tested; no fresh live revocation claimed |
-| 6    | Read-only retention impact       | 1373a87; owner accepted rendered counts/ages/preservation; included in current SQL run                 | Browser acceptance and deployment-specific performance evidence open     |
-| 7    | Failure/recovery journeys        | df10219; owner recovery file 6/6; included in current full SQL suite                                   | Fixtures model interruption; no real process-kill recovery claimed       |
-| 8    | Isolated CI verification         | ecee52a; owner full SQL **124/124, 11 files** and unit/HTTP/DOM **476, 49 files**; static/build passed | Workflow reviewed, **GitHub-hosted run not executed**                    |
-| 9    | Deployment/acceptance runbooks   | This documentation change; no commit hash assigned before owner commit                                 | Owner review/commit and outstanding operational gates                    |
+| 6    | Read-only retention impact       | 1373a87; owner accepted rendered counts/ages/preservation; included in historical SQL run              | Browser acceptance and deployment-specific performance evidence open     |
+| 7    | Failure/recovery journeys        | df10219; owner recovery file 6/6; included in historical full SQL suite                                | Fixtures model interruption; no real process-kill recovery claimed       |
+| 8    | Isolated CI verification         | ecee52a; owner full SQL **124/124, 11 files** and unit/HTTP/DOM **476, 49 files**; static/build passed | Later PR #1 hosted CI passed; separate squash-SHA rerun not established  |
+| 9    | Deployment/acceptance runbooks   | Runbooks committed at b92712e, now included in main squash d21dc1a                                     | Local recovery/operational exercises and release acceptance remain open  |
 
 Owner-reported Step 8 TypeScript, ESLint, formatting, Prisma validation/generation,
 worker compilation and isolated webpack build passed. These are owner-local results,
 not a new sandbox execution or hosted CI. Earlier 117/117 was a pre-Step-7 baseline;
 Step 7 added six recovery-file cases **plus one revalidation-file cooldown case**.
-The current actual full 124/124 result supersedes that unresolved full-suite gate.
-Browser tests and live Groq acceptance have not been established by these results.
+That historical full 124/124 result resolved the earlier SQL suite uncertainty.
+Later owner-reported Playwright 12/12 establishes aggregate desktop/mobile success,
+not the complete detailed matrix or a d21dc1a rerun. Live Groq remains unverified.
 
 ### Implementation and safety review
 
-- [x] All nine implementation/doc areas have deliverables; Step 9 awaits its local commit.
+- [x] All nine implementation/doc areas and typography are committed and merged in d21dc1a.
 - [x] Same PostgreSQL queue, fencing and separate worker architecture; no Redis/new service.
 - [x] Health distinguishes fresh continuous polling from bounded or insufficient evidence.
 - [x] Admin-only scope guards; no secrets/raw payloads in operational summaries.
 - [x] Revalidation is explicit, identity-preserving and uses the permitted caller's authorization.
 - [x] Retention remains read-only, with dependency/preservation rules and incomplete results.
-- [x] Current owner-run isolated SQL 124/124 and unit/HTTP/DOM 476 results are recorded.
-- [ ] Step 9 documentation reviewed and committed by owner; record actual SHA.
-- [ ] Target deployment's eight-migration status verified before rollout; retain target evidence.
+- [x] Historical SQL 124/124 and later unit/UI 485 results are recorded with their scope.
+- [x] Step 9 runbooks are committed and incorporated in main squash d21dc1a.
+- [ ] Record current local migration-state evidence for operational exercises; before any
+      future production rollout, separately verify its target and eight-migration state.
 - [ ] Backup/key recovery rehearsal and artifact/schema-compatible rollback plan approved.
-- [ ] GitHub-hosted CI on the final reviewed branch SHA passes; record run URL/SHA/results.
-- [ ] Playwright chromium/mobile suites actually execute and pass; retain reports/traces.
+- [x] Owner reports successful PR #1 hosted CI and completed squash merge.
+- [ ] Retain CI run URL/tested SHA/results; establish any required post-squash verification
+      explicitly, without attributing historical test totals to d21dc1a.
+- [x] Owner reports 12/12 desktop/mobile Chromium browser passes.
+- [ ] Retain per-case reports/traces and current-release mapping for detailed acceptance.
 - [ ] Desktop/mobile visual/keyboard/theme inspection records screenshots and observed defects.
 - [ ] Separately authorized live operational and disposable automation journeys below completed.
 - [ ] Release owner reviews unresolved limitations and explicitly closes M3.5 acceptance.
@@ -100,32 +122,30 @@ It has contents:read permission, SHA-pinned actions, nonpersistent checkout
 credentials, frozen pnpm install and a lockfile/build-policy download-store cache.
 It does not deploy, start a worker, enable rules or require repository secrets.
 
-1. Obtain the owner's **explicit push approval**, separately from approval to commit
-   Step 9. Confirm branch, clean tree, final SHA, reviewed diff and remote destination
-   jameelsikandar/devflow. Do not force-push or modify history.
-2. Only after that approval, push the feature branch (not main). Example future command:
+[PR #1](https://github.com/jameelsikandar/devflow/pull/1) already passed hosted CI and was squash-merged
+into main at d21dc1a, according to the owner. Do not repeat the old feature-branch
+push/PR/merge procedure or describe that completed verification as pending.
 
-```bash
-# NOT authorized to execute by this checklist alone.
-git push --set-upstream origin feat/m3-5-operational-readiness
-```
+The exact hosted run URL/tested SHA and per-stage counts remain evidence gaps.
+Do not infer a post-merge run on d21dc1a from PR success. The workflow includes
+schema/client/migrations, formatting/lint/types, worker compilation, mocked-provider
+unit tests, real isolated SQL tests and webpack. It does not run Playwright or
+start a live worker. Its CI PostgreSQL16 fixture differs from local Compose18.
 
-3. Open GitHub Actions → **Isolated verification** → **Types, tests and production
-   build** for that SHA. Check Node/pnpm versions, ephemeral postgres:16 health,
-   guarded migration deployment, schema/client, formatting/lint/core types, worker
-   compilation, 476 unit cases and 124 integration cases (or explain reviewed later
-   count changes), webpack and full generated-route types. Every required stage
-   must execute; cancelled/skipped/failed jobs do not pass. Record URL/SHA/date/counts.
-4. CI uses devflow_test at loopback5432 and an unreachable application sentinel;
-   never give it local/hosted/production URLs or OAuth/AI secrets to repair failures.
-   See [verification troubleshooting](../VERIFICATION.md) for stage-specific help.
-5. For a failure, retain sanitized logs, reproduce using mocks/devflow_test, make a
-   focused fix commit and rerun checks. Obtain further push approval for that fix.
-   Do not amend/rebase/force-push. A new SHA requires new CI evidence.
-6. Open a pull request only when separately authorized, review all changes and
-   outstanding manual gates, then merge **only with explicit owner approval**. No
-   automatic merge, branch protection change or required-check configuration is
-   performed by this milestone. A successful CI run alone does not close M3.5.
+For **future changes only**:
+
+1. Obtain explicit approval before a push, PR creation or merge. Confirm branch,
+   reviewed diff and repository destination. No force-push/history rewrite.
+2. Inspect the **Isolated verification / Types, tests and production build** run
+   for the actual tested SHA; retain its URL, stage results and actual test counts.
+   Historical 485/124 totals are not substituted for the job's output.
+3. Never add production/hosted database URLs or live OAuth/AI secrets to repair CI.
+   Reproduce failures with mocks/devflow_test and make focused fix commits.
+4. A push to audit/\*\* alone does not match the current push filters. The existing
+   pull_request trigger can verify future approved work; no workflow change is
+   made or new remote action authorized by this reconciliation.
+5. Merge only after explicit review/approval. A successful CI run does not replace
+   local recovery, disposable GitHub lifecycle or release-owner acceptance.
 
 ## Manual operational acceptance — separately approved test scope
 
@@ -164,8 +184,9 @@ Known limits: custom auth lacks MFA/password recovery; classic OAuth uses broad 
 scope; health is PostgreSQL as-of evidence with no external alerting; retention is
 analysis only and may be incomplete above its cap; polling/SSE and DB pools require
 capacity planning. CI uses PostgreSQL16 while local Compose18 needs separate
-operational compatibility review. No live deployment/restore/process-interruption
-or final browser/hosted-CI acceptance was performed during documentation work.
+operational compatibility review. Production deployment has not started. Local restore/process-interruption and
+detailed acceptance remain unverified; historical browser passes and PR #1 CI
+success are recorded separately above. No such exercises ran during this update.
 
 **Do not mark M3.5 complete until required outstanding acceptance is recorded and
-reviewed. Step 9 implementation/commit and milestone release acceptance are separate.**
+reviewed. The completed implementation/merge and milestone operational acceptance are separate.**

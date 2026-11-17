@@ -1,6 +1,45 @@
 # DevFlow local verification
 
-## Current evidence — typography browser verification
+## Current state — M3.5 Step 1 verification evidence reconciliation
+
+Confirmed audit/m3-5-operational-acceptance at d21dc1a with a clean working tree
+before edits; local main also resolves to d21dc1a. The owner confirms M3.5 and
+typography were squash-merged through [PR #1](https://github.com/jameelsikandar/devflow/pull/1) and its
+GitHub Actions passed. Implementation/runbooks are committed, not awaiting their
+old feature-branch commits or the already completed PR verification.
+
+| Evidence scope                          | Established evidence                                                                                            | Limits                                                                                                                                              |
+| --------------------------------------- | --------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Historical local implementation checks  | 485 unit/UI tests in 50 files; earlier full/core types, ESLint, formatting and isolated webpack passed          | Not fresh executions on d21dc1a                                                                                                                     |
+| Historical local PostgreSQL             | 124/124 integration tests in 11 files on devflow_test                                                           | Not rerun for typography or this documentation reconciliation                                                                                       |
+| Historical Fedora browser/manual checks | Owner reports 12/12 Playwright in 3.1 minutes, desktop/mobile Chromium, and improved readability at normal zoom | No complete per-width/theme/keyboard/native-zoom matrix or screenshots supplied                                                                     |
+| PR #1 hosted verification               | Owner reports GitHub Actions passed for the merged PR                                                           | PR URL is supplied, but no CI run ID/URL, tested SHA, per-stage counts or verification date; no independent GitHub query in this step               |
+| Current main                            | Squash commit d21dc1a contains M3.5 and typography                                                              | A squash merge/PR pass is not proof of a separate complete post-merge test run                                                                      |
+| Local operational acceptance            | DevFlow runs on Fedora Linux 44 with local Docker development/test PostgreSQL                                   | Backup/key restore, rollback, supervised interruption/recovery, disposable GitHub automation and detailed accessibility exercises remain unverified |
+| Production                              | **Deployment has not started**                                                                                  | Production configuration/migrations/smoke/rollback are future gates, not a verified deployed environment                                            |
+
+**M3.5 operational acceptance remains OPEN.** Preserve the distinction between
+historical test results, PR success, merged code and operational rehearsal. No
+verification dates, CI-run links or new test totals are inferred. The older M3.5
+ledger's 476-unit baseline predates typography's 485; both remain historical counts.
+
+Only deploy/M3_5_ACCEPTANCE.md, deploy/DEPLOYMENT_RUNBOOK.md, TYPOGRAPHY.md and
+VERIFICATION.md change in this reconciliation. The CI workflow was inspected and
+is unchanged: ephemeral PostgreSQL16/devflow_test, guarded migrations, mocked
+provider tests, read-only permissions and no Playwright/worker execution stage.
+This is not proof of local Compose18 operational compatibility or recovery.
+
+Documentation Prettier, relative-link and diff checks are the only verification
+performed in this step. No application tests/build, SQL commands, migration/seed,
+worker start, environment/secret change, GitHub mutation, automation, commit, push
+or merge. Stop for owner review; any further operational action requires its own
+scope and approval. Historical sections below describe their original handoffs
+and are superseded by this summary for current implementation/PR status only.
+
+## Historical evidence — typography browser verification
+
+This section preserves the earlier pre-merge evidence handoff. Its pending-commit/
+CI wording is historical; see the current PR #1/d21dc1a summary above.
 
 Branch style/global-typography-readability was verified clean at b92712e before
 edits. This branch is based on the committed M3.5 runbooks; no M3.5 commit was

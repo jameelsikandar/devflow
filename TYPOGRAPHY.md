@@ -1,6 +1,7 @@
 # DevFlow typography and readability
 
-Committed as 3855411 on style/global-typography-readability, based on b92712e. This is a
+Originally committed as 3855411 on style/global-typography-readability, based on
+b92712e; now included with M3.5 in main squash d21dc1a through PR #1. This is a
 focused presentation change; M3.5 commits/history and operational acceptance gates
 are retained. No backend, schema, authentication, task data or automation changed.
 Fedora-host browser tests and normal-zoom visual inspection passed as reported
@@ -122,11 +123,18 @@ PostgreSQL integration was **not rerun** for this typography-only change; the pr
 
 ### GitHub-hosted CI scope
 
-The owner identifies a previously successful **M3.5 hosted CI run at b92712e**.
-That is evidence for the earlier base commit, not for typography commit 3855411.
-**Hosted CI has not run for 3855411** or this documentation follow-up. No run URL
-or additional hosted test totals are asserted here. No push or merge is authorized
-or performed by this update.
+Historical records identify successful M3.5 hosted CI at b92712e and no standalone
+hosted result for typography commit 3855411 at that earlier handoff. Subsequently,
+the owner confirms [PR #1](https://github.com/jameelsikandar/devflow/pull/1) passed GitHub Actions and
+M3.5 plus typography were squash-merged into main at **d21dc1a**.
+
+This establishes successful PR verification, not an independently evidenced complete
+post-squash rerun. No CI run ID/URL, tested SHA, test totals or verification date
+is invented. The earlier Fedora 12/12 browser result and normal-zoom inspection
+remain valid historical evidence; they are not relabeled as tests run on d21dc1a.
+DevFlow remains local on Fedora44/Docker PostgreSQL; production has not started.
+Operational/recovery and detailed visual/accessibility acceptance remain open.
+No push, merge or external action is performed by this reconciliation.
 
 ### Detailed acceptance still to record
 
@@ -175,7 +183,7 @@ zoom substitute. Store screenshots/reports under ignored test-results/, never
 commit authenticated screenshots or tokens. Record actual failures rather than
 marking browser/visual acceptance complete from unit, discovery or build results.
 
-The implementation commit is 3855411 (style: improve global typography and
-readability). This documentation-only follow-up is prepared separately as
-docs: record typography browser verification. It does not amend the implementation
-commit. The owner reviews and commits locally; no push, merge or history rewrite.
+Typography development and its browser-evidence follow-up are now included in
+main squash d21dc1a. This evidence reconciliation is documentation-only on
+audit/m3-5-operational-acceptance, not another implementation or CI/browser run.
+No commit/push/merge/history rewrite is performed; stop for owner review.
