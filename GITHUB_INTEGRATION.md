@@ -8,14 +8,15 @@ M3.4 now adds explicitly confirmed future-event status automation. Its latest
 section below supersedes earlier preview-only deployment notes. Existing OAuth,
 repository browsing, commit history and open-PR reads are retained.
 
-## Current operational status — M3.5 step 2
+## Current operational status — M3.5 step 3
 
 M3.1–M3.4 source is implemented. M3.5 is approved for operational acceptance and
 hardening. Baseline documentation and formatting cleanup are committed; this
-change adds durable worker signals and classification (details at the end).
+change adds an administrator-only operational summary API on top of the
+committed worker signals/classifier (details at the end).
 Existing processing controls, task links, previews and confirmed PR automation retain
-their current behavior. Health APIs/panels, diagnostic operations, retention reporting
-and CI remain later steps. The baseline ledger is historical; the step 2 section
+their current behavior. Health panels, explicit connection revalidation, retention
+reporting and CI remain later steps. The baseline ledger is historical; the step 2 section
 at the end records the current implementation and unverified database gate;
 earlier phase sections remain historical implementation/setup records.
 
@@ -880,3 +881,57 @@ runs are retained; there is no retention deletion, archival, pruning job or exte
 monitoring service. Large installations should scope worker instances as needed.
 No hostnames, OAuth tokens, webhook secrets, payloads or cross-scope job counts
 are stored. A run ID is an internal correlation identifier, not a credential.
+
+## M3.5 step 3 — administrator operational health API
+
+```text
+GET /api/github/repositories/:connectionId/health?workspaceId=:workspaceId
+```
+
+Uses the session's authenticated user, workspace membership and existing
+owner/admin-only authorizeGitHubProject helper. Project scope is derived from
+the connection in that workspace; arbitrary userId/projectId query parameters
+cannot override it. Members receive 403, missing membership and foreign connections
+404, and unauthenticated requests 401. This endpoint has no POST/PATCH/DELETE
+actions. Success and error responses use Cache-Control: no-store.
+
+The response is an as-of database-clock RepeatableRead snapshot:
+
+- scope: authorized workspace/project/connection identifiers and disconnected/
+  archived flags. No provider credentials or identities are returned.
+- worker: step 2 classifier state, lastHeartbeatAt, lastPollAt,
+  lastAttemptProgressAt and lastBoundedHeartbeatAt. Timestamps may be null.
+  DISCONNECTED or PROJECT_ARCHIVED overrides worker health. Run IDs and raw signal
+  rows are omitted. Evidence buckets retain a representative of each relevant
+  condition, including a healthy replica among many more recent stalled replicas;
+  no arbitrary recent-row LIMIT changes the meaning of availability.
+- deliveries: total, pending, failed, processed, cancelled, processing;
+  ready/scheduled (PENDING or non-dead-lettered FAILED receipts at/before or after
+  asOf); expiredLeases (PROCESSING with absent/expired lease); deadLettered (FAILED
+  with a dead-letter timestamp); oldestReadyAt (original receipt time),
+  nextScheduledAt, lastReceivedAt, lastProcessedAt.
+- automation: total, pending, applied, skipped, conflicted, failed; ready/scheduled
+  pending executions and oldestReadyAt (creation time), nextScheduledAt.
+- diagnostics: static code/message pairs explaining missing evidence, bounded-only
+  service, missing continuous signals, unavailable scope, scheduled work, expired
+  leases, dead letters and terminal automation outcomes. No free-form stored error
+  or payload content is used. No diagnosis triggers a retry, external call or action.
+
+Counts are not mutually exclusive: e.g. expiredLeases is a subset of processing;
+ready/scheduled overlap lifecycle totals. Do not sum all fields or interpret counts
+as task mutations. Scheduled-ready means the timestamp is due, not that a retry
+budget, repository or rule is eligible: the worker revalidates those conditions.
+Future retry/backoff is informational, not proof of failure. A heartbeat/poll is
+as-of evidence, not an instantaneous queue/host availability guarantee.
+
+No migration, worker start, OAuth/enrichment request, rule edit or automatic retry
+is performed by this read. Check terminal records through existing processing/
+execution history before taking separately authorized action. Existing rules and
+DEV-002 remain untouched. Connection revalidation remains step 5, health panels
+step 4; this is not a new UI or operational alerting service.
+
+Use an already authenticated administrator session to inspect the URL. Local API
+and database regression commands are in VERIFICATION.md; no live GitHub/Groq
+credentials are required. Fedora integration counts were not supplied in the
+request, and the sandbox's guarded devflow_test probe is still unreachable. Do
+not infer database acceptance from unit mocks or an HTTP fixture alone.

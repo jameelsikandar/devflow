@@ -1,3 +1,4 @@
+import { githubOperationalHealth } from '@/lib/server/github-operational-health';
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { z } from 'zod';
@@ -81,9 +82,16 @@ const taskInclude = {
 } as const;
 const activityInclude = { actor: { select: personSelect } };
 async function handler(request: Request, { params }: { params: Promise<{ path: string[] }> }) {
+  let operationalHealthRead = false;
   try {
     guardOrigin(request);
     const { path } = await params;
+    operationalHealthRead =
+      path.length === 4 &&
+      path[0] === 'github' &&
+      path[1] === 'repositories' &&
+      path[3] === 'health' &&
+      request.method === 'GET';
     const route = path.join('/');
     const method = request.method;
     const url = new URL(request.url);
@@ -536,6 +544,10 @@ async function handler(request: Request, { params }: { params: Promise<{ path: s
         text: await generateAssistant(input.action, input.prompt, projects),
       });
     }
+    if (operationalHealthRead)
+      return NextResponse.json(await githubOperationalHealth(actor, path[2]), {
+        headers: { 'Cache-Control': 'no-store' },
+      });
     if (
       path[0] === 'github' &&
       path[1] === 'repositories' &&
@@ -695,7 +707,9 @@ async function handler(request: Request, { params }: { params: Promise<{ path: s
     }
     throw new HttpError(404, 'Endpoint not found');
   } catch (error) {
-    return errorResponse(error);
+    const response = errorResponse(error);
+    if (operationalHealthRead) response.headers.set('Cache-Control', 'no-store');
+    return response;
   }
 }
 export { handler as GET, handler as POST, handler as PATCH, handler as DELETE };

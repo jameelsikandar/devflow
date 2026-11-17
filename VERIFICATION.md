@@ -1,6 +1,97 @@
 # DevFlow local verification
 
-## Current change — M3.5 step 2: durable worker signals (2026-11-15)
+## Current change — M3.5 step 3: authorized summaries (2026-11-17)
+
+Verified owner commit 8fbdc3e on feat/m3-5-operational-readiness and a clean tree
+before implementation. The owner's restored-Fedora message includes the literal
+placeholder `[INSERT RESULTS]`; actual integration counts were not supplied.
+No owner-local PostgreSQL pass is inferred from that placeholder.
+
+### Actual checks
+
+| Check                     | Executed command                                                                              | Result                                                                                        |
+| ------------------------- | --------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| Full TypeScript           | node_modules/.bin/tsc --noEmit --pretty false                                                 | Passed                                                                                        |
+| Core TypeScript           | node_modules/.bin/tsc --noEmit -p tsconfig.core.json --pretty false                           | Passed                                                                                        |
+| Worker compilation        | node_modules/.bin/tsc -p tsconfig.worker.json --pretty false                                  | Passed; no worker started                                                                     |
+| ESLint                    | node_modules/.bin/eslint .                                                                    | Passed                                                                                        |
+| Prisma schema             | node_modules/.bin/prisma validate                                                             | Passed; schema unchanged, no migration needed                                                 |
+| Full unit/route/DOM suite | AI_API_KEY= GITHUB_CLIENT_ID= GITHUB_CLIENT_SECRET= node_modules/.bin/vitest run --pool=forks | **352 passed, 40 files, 0 failed**; includes 12 new summary/HTTP route cases                  |
+| Webpack production build  | Installed Next binary: next build --webpack, in isolated source snapshot below                | Passed                                                                                        |
+| Repository format/diff    | node_modules/.bin/prettier --check .; git diff --check                                        | Passed                                                                                        |
+| PostgreSQL                | Guarded connection-only probe for exactly devflow_test                                        | Still unreachable at localhost:5433 from sandbox; **nine new integration cases not executed** |
+| Browser/live              | Not run for this API-only step                                                                | No UI, browser acceptance, live worker or GitHub/Groq action claimed                          |
+
+The probe used dotenv plus requireTestDatabase, required exactly /devflow_test,
+and constructed a separate PrismaClient datasourceUrl from that validated URL.
+Only $connect/$disconnect were attempted; it reported TEST_DATABASE_UNREACHABLE.
+No migration, fixture, cleanup or application database write followed, and the
+blocked connection was not repeatedly retried. Fedora health does not establish
+sandbox socket accessibility. These are unexecuted tests, not passing/skipped counts.
+
+To preserve the owner's running Next.js development output, tracked and new source
+files were copied to /tmp/devflow-m35-summary-build-5z5irin\_, excluding private
+.env files and generated artifacts. node_modules was symlinked for installed
+dependencies; the application directory's .next was untouched. The successful
+build used blank AI/GitHub client configuration, NEXT_TELEMETRY_DISABLED=1,
+APP_URL=http://localhost:3000 and a non-live placeholder DATABASE_URL at
+localhost:1/devflow_build_test. No database connection is needed for these dynamic
+API routes. The initial build command used the wrong /tmp working directory and
+exited 127 (binary not found); it was corrected to the source snapshot before the
+successful build. No permission workaround or application config change was used.
+
+Logs: /tmp/devflow-m35-summary-unit.log and /tmp/devflow-m35-summary-build.log.
+Source/API behavior and tests passed with installed binaries equivalent to pnpm
+scripts; no package, lockfile, schema or migration change was introduced.
+
+### Safe Fedora-local verification
+
+Use the existing distinct devflow_test configuration and the already-reviewed
+step 2 migration. The following guard only inspects configuration and prints a
+sanitized target; it never prints credentials or modifies either database.
+
+```bash
+node --import tsx <<'NODE'
+require('dotenv/config');
+const { requireTestDatabase } = require('./tests/database-config.ts');
+const target = requireTestDatabase(process.env.DATABASE_URL, process.env.TEST_DATABASE_URL);
+if (target.pathname !== '/devflow_test') throw Error('Only devflow_test permitted');
+console.log('Verified isolated test target', target.hostname, target.port, target.pathname);
+NODE
+# Continue only if the guard succeeds and Step 2 migration is present in devflow_test.
+AI_API_KEY= GITHUB_CLIENT_ID= GITHUB_CLIENT_SECRET= pnpm exec vitest run --config vitest.integration.config.ts tests/github-operational-health.integration.test.ts
+AI_API_KEY= GITHUB_CLIENT_ID= GITHUB_CLIENT_SECRET= pnpm test:integration
+AI_API_KEY= GITHUB_CLIENT_ID= GITHUB_CLIENT_SECRET= pnpm exec vitest run --pool=forks
+pnpm typecheck
+pnpm typecheck:core
+pnpm lint
+pnpm format:check
+pnpm github:worker:build
+```
+
+No new migration is necessary. If Step 2's migration is missing, review its guarded
+**isolated-database-only** command in that historical section; do not run a generic
+application migration, reset or seed. No worker start is required for the nine
+new integration cases: they create fresh isolated fixture rows and call read-only
+services/HTTP handlers with mocked Next cookies. External fetch is forbidden.
+They cover administrator/session authorization, cross-workspace/project/connection
+isolation, many stalled replicas, bounded/stale/disconnected/archived evidence,
+backoff/lease/dead-letter counts, automation aggregates and unchanged task/receipt
+state. These tests are not live provider or browser acceptance.
+
+For production build verification, first stop your local dev server or reproduce
+the temporary source-snapshot approach, then run pnpm build:webpack with blank
+AI/GitHub credentials. Do not launch another conflicting server or live worker.
+The new no-store endpoint may be inspected in an existing authenticated owner/admin
+browser session at /api/github/repositories/CONNECTION_ID/health?workspaceId=WORKSPACE_ID.
+It performs no external requests, mutations or automatic retries. This step adds
+no UI; step 4 waits for owner commit confirmation.
+
+Prepared commit: `feat(github): expose authorized operational health summaries`.
+No Git staging/commit/push is attempted in the read-only metadata sandbox. No live
+rules, repository connections, DEV-002 or application records were changed.
+
+## Historical change — M3.5 step 2: durable worker signals (2026-11-15)
 
 Owner commits verified: f1a1a2b (baseline docs), f101e28 (formatting cleanup).
 Branch feat/m3-5-operational-readiness and working tree were clean before this

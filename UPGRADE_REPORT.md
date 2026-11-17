@@ -6,9 +6,9 @@ The audit, roadmap/dependency implementation (Milestone 1), and agentic AI proje
 manager (Milestone 2) are implemented. Milestone 3 includes M3.1 connections,
 M3.2 event processing, M3.3 workflow definitions/dry-run previews, and M3.4
 confirmed future-event status automation. Database/browser/live automation acceptance
-remains open in this sandbox. M3.5 step 2 now adds durable worker signals and
-evidence classification; administrator APIs/panels and later operational work
-remain pending. The new database migration is un-applied in this environment.
+remains open in this sandbox. M3.5 step 2 adds durable worker signals and evidence classification; step 3 now
+prepares administrator-only operational summary APIs. Panels and later operational
+work remain pending. Step 2 migration verification remains unavailable in this sandbox.
 This is **not a claim that the entire DevFlow 2.0 mission is finished**. The checklist
 in `UPGRADE_PLAN.md` records the remaining phases and open release gates.
 
@@ -1084,3 +1084,31 @@ in VERIFICATION.md. Live/database acceptance is not substituted with mock eviden
 
 Prepared commit: `feat(ops): persist scoped worker health signals`. Wait for the
 owner's successful commit confirmation before step 3. M3.5 remains incomplete.
+
+## M3.5 step 3 — authorized operational summaries (2026-11-17)
+
+Confirmed owner commit 8fbdc3e and clean feat/m3-5-operational-readiness. New
+repository-scoped health GET uses existing authentication/membership checks,
+workspace owner/admin authorization and project lookup. All reads are scoped to
+the authorized connection and use a consistent database-clock snapshot. The new
+endpoint is read-only and no-store on success/error. Step 2 classifier semantics
+are unchanged; its input type is narrowed to the evidence fields actually used.
+
+The response contains scoped worker health/timestamps, aggregate delivery and
+workflow lifecycle/scheduling counts, and static actionable diagnostics. It
+includes no cross-workspace worker run IDs, job payloads, tokens, stored provider
+errors, task data or rule snapshots. Representative evidence buckets preserve
+healthy replica visibility without returning unbounded historical signals. Idle,
+backoff, bounded and insufficient-evidence states do not generate invented host
+failure or queue-delay alerts. Disconnected/archived scope overrides fresh signals.
+
+Unit/route and PostgreSQL authorization/privacy/regression cases accompany this
+change. Exact results are in VERIFICATION.md. A guarded connection probe still
+cannot access localhost:5433/devflow_test; new integration tests are unexecuted.
+The owner's placeholder test results are not acceptance evidence. No application
+or test migrations, application-data changes, worker starts, external calls or UI
+modifications occur in this step. Webpack is verified in a separate /tmp source
+snapshot so the owner's running Next.js dev output is not disturbed.
+
+Prepared commit: `feat(github): expose authorized operational health summaries`.
+Step 4 and M3.5 acceptance remain pending; wait for owner commit confirmation.

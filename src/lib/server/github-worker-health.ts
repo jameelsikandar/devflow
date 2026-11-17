@@ -146,8 +146,12 @@ export function createWorkerHealth(
   };
 }
 
+export type WorkerHealthEvidence = Pick<
+  GitHubWorkerSignal,
+  'mode' | 'state' | 'heartbeatAt' | 'polledAt' | 'idleAt' | 'staleAfterMs'
+>;
 /** Read-side evidence classifier; no authorization or queue/execution permissions. */
-export function classifyWorkerHealth(signals: GitHubWorkerSignal[], now: Date) {
+export function classifyWorkerHealth(signals: WorkerHealthEvidence[], now: Date) {
   const continuous = signals.filter((s) => s.mode === 'CONTINUOUS');
   const fresh = continuous.filter(
     (s) =>

@@ -1,11 +1,11 @@
 # DevFlow 2.0 upgrade
 
 Current implementation: M1, M2 and M3.1–M3.4. Current approved work: **M3.5 —
-operational acceptance and hardening**, step 2 (durable worker signals).
+operational acceptance and hardening**, step 3 (authorized operational health summaries).
 M3.5 is not complete. The current status and checklist below supersede older
 planning statements; dated results remain historical evidence, not fresh passes.
 
-## Current status — M3.5 step 2 (2026-11-15)
+## Current status — M3.5 step 3 (2026-11-17)
 
 The owner created `feat/m3-5-operational-readiness` from `48d7b5c` on clean `main`.
 The initial feature-branch check confirmed a clean working tree and empty index.
@@ -17,7 +17,8 @@ All 82 database tests were skipped at connection setup; zero browser tests execu
 Neither result is a pass. No migration, seed, live worker or live external action ran. The
 repository-wide format check initially failed on four pre-existing files; the owner
 committed the separate formatting-only fix f101e28 after step 1. Step 2 adds worker
-signal persistence/classification; scoped API/UI work remains in steps 3–4.
+signal persistence/classification (committed 8fbdc3e); step 3 prepares the
+administrator-only summary API. UI work remains step 4.
 
 M3.5 reuses the existing queue, workflow executor, task activity and administrator
 panels. Approved scope: lightweight PostgreSQL worker health, scoped operational
@@ -507,20 +508,20 @@ follows below. Unrelated actions/automation triggers remain excluded.
 ## M3.5 approved sequence and acceptance gates — 2026-11-15
 
 Step 1 documentation (f1a1a2b) and formatting cleanup (f101e28) were confirmed by
-the owner before step 2 began. Step 2 is prepared for the owner's local commit.
-**Do not begin step 3 until the owner confirms step 2 was committed.**
+the owner before step 2 began. Step 2 was confirmed as 8fbdc3e with a clean tree. Step 3 is prepared for the
+owner's local commit. **Do not begin step 4 until that commit is confirmed.**
 
-| Step | Focused commit                                                    | State                                                                |
-| ---- | ----------------------------------------------------------------- | -------------------------------------------------------------------- |
-| 1    | docs: reconcile milestone status and operational acceptance gates | Committed: f1a1a2b                                                   |
-| 2    | feat(ops): persist scoped worker health signals                   | Implementation prepared; DB acceptance blocked; owner commit pending |
-| 3    | feat(github): expose authorized operational health summaries      | Pending                                                              |
-| 4    | feat(github): display operational health in existing panels       | Pending                                                              |
-| 5    | feat(github): add explicit connection revalidation diagnostics    | Pending                                                              |
-| 6    | feat(ops): add read-only retention impact reports                 | Pending                                                              |
-| 7    | test: cover operational failure and recovery journeys             | Pending                                                              |
-| 8    | chore: add isolated CI verification                               | Pending                                                              |
-| 9    | docs: publish M3.5 deployment and acceptance runbooks             | Pending                                                              |
+| Step | Focused commit                                                    | State                                                |
+| ---- | ----------------------------------------------------------------- | ---------------------------------------------------- |
+| 1    | docs: reconcile milestone status and operational acceptance gates | Committed: f1a1a2b                                   |
+| 2    | feat(ops): persist scoped worker health signals                   | Committed: 8fbdc3e; PostgreSQL evidence not supplied |
+| 3    | feat(github): expose authorized operational health summaries      | Prepared; awaiting owner commit                      |
+| 4    | feat(github): display operational health in existing panels       | Pending                                              |
+| 5    | feat(github): add explicit connection revalidation diagnostics    | Pending                                              |
+| 6    | feat(ops): add read-only retention impact reports                 | Pending                                              |
+| 7    | test: cover operational failure and recovery journeys             | Pending                                              |
+| 8    | chore: add isolated CI verification                               | Pending                                              |
+| 9    | docs: publish M3.5 deployment and acceptance runbooks             | Pending                                              |
 
 Relevant tests accompany each functional step; discovered defects get their own
 focused fix commits rather than being hidden in unrelated changes. No reset,
@@ -533,7 +534,8 @@ amend, rebase, push or merge is authorized. Only the owner stages/commits locall
 - [x] Resolve the four recorded baseline formatting violations in a separate
       `chore: normalize baseline source formatting` change (f101e28); checks rerun.
 - [x] Implement worker signal persistence/classification without misleading idle/bounded/unknown alerts (step 2 source; PostgreSQL acceptance pending).
-- [ ] Add authorized summaries and diagnostics without silently mutating connections.
+- [x] Add administrator-only operational summary reads (step 3 source; PostgreSQL verification blocked).
+- [ ] Add explicit authorized connection diagnostics without silently mutating connections (step 5).
 - [ ] Add retention policy/dependency impact reporting without deletion or archival.
 - [ ] Add isolated CI and operational failure/recovery coverage; preserve replay,
       idempotency, authorization, task-version and lease-fencing guarantees.
@@ -567,3 +569,28 @@ The migration has not been applied to either database here.
 
 **Stop for owner commit confirmation before step 3.** M3.5 live acceptance remains
 open; no live worker, rule, repository connection or DEV-002 was changed.
+
+### Step 3 — authorized operational health summaries (2026-11-17)
+
+Verified 8fbdc3e on the correct feature branch with a clean starting tree. The
+owner reported restored Fedora infrastructure but supplied `[INSERT RESULTS]`
+rather than integration counts; no PostgreSQL pass is inferred from that placeholder.
+
+Prepared endpoint: GET /api/github/repositories/:connectionId/health?workspaceId=...
+uses the existing authenticated actor and administrator authorization, derives
+project scope from the authorized connection, and reads in a RepeatableRead
+transaction with a database-clock as-of timestamp. Worker evidence reuses the step
+2 classifier; representative query buckets avoid hiding a healthy replica behind
+many recent stalled ones. Counts distinguish ready scheduling, future backoff,
+expired leases, terminal delivery/workflow outcomes and historical disconnected
+or archived scopes. Only explicit aggregates/timestamps and static diagnostics
+are returned; no run IDs, job payloads, credential fields or free-form errors.
+GET success and failure responses use no-store; there is no mutation endpoint.
+No schema migration, worker or external request is needed by this step.
+
+Source/unit/route regression tests and new isolated PostgreSQL cases are added.
+The guarded localhost:5433/devflow_test connection probe remains blocked in the
+sandbox; new database tests are not executed. See VERIFICATION.md for exact final
+checks and local commands. Existing Next.js development output is preserved by
+building a credential-free source snapshot under /tmp. No UI work is started.
+**Wait for owner commit confirmation before step 4.**
