@@ -1,6 +1,67 @@
 # DevFlow local verification
 
-## Current state — M3.5 Step 1 verification evidence reconciliation
+## Current evidence — operational acceptance Step 8: local PostgreSQL recovery
+
+Confirmed audit/m3-5-operational-acceptance at 476ce73 with a clean working tree
+before edits. This documentation-only update records the owner's verified local
+rehearsal; Codex did not connect to databases, access the archive, read secrets or
+execute any backup/restore command. No verification date is inferred from the
+recovery database name. Production deployment has not started.
+
+### Owner-reported successful rehearsal
+
+| Evidence                     | Verified local result                                                                                                      |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Host / server                | Fedora Linux 44; Docker PostgreSQL 18.6                                                                                    |
+| Development / test databases | devflow / devflow_test; all eight development migrations applied                                                           |
+| Capacity                     | Source approximately 11 MB; host disk available approximately 118 GB                                                       |
+| Archive                      | PostgreSQL custom format, approximately 121 KB; SHA-256 checksum passed; pg_restore listing succeeded with 245 entries     |
+| Restore execution            | Succeeded using --single-transaction and --exit-on-error                                                                   |
+| Exclusive restore target     | devflow_recovery_20261117T230002Z_b468b9ee8567                                                                             |
+| Schema / migrations          | 33 public tables; eight completed Prisma migrations; zero incomplete; all eight migration checksums match repository files |
+| Constraints                  | 33 primary keys; 56 foreign keys; zero unvalidated constraints                                                             |
+| Data-integrity aggregates    | Zero orphaned tasks, invalid GitHub task links or automation activity inconsistencies                                      |
+| Artifact state               | Archive and recovery database still exist; no cleanup has been authorized                                                  |
+
+The source devflow database was used only as the backup source; restoration targeted
+only the separate recovery database. Neither devflow nor devflow_test was restored
+over. No migrations, seeds, GitHub workers or automation executed during the
+rehearsal. These results are owner-executed evidence, not new Codex test passes.
+The full local result and checklist are in
+[the acceptance document](deploy/M3_5_ACCEPTANCE.md).
+
+### What remains unverified
+
+This establishes **logical database restoration for the tested local environment**,
+not full disaster recovery, production recovery, host/volume-loss recovery,
+point-in-time recovery, cluster role/ACL restoration, recovery objectives or
+application/worker rollback. TOKEN_ENCRYPTION_KEY custody and actual offline
+decryption/key continuity remain unverified. No secret values or private records
+are included, and no production recovery is claimed.
+
+Retain the separate acceptance gates for encryption-key custody/decryption,
+artifact/schema-compatible rollback, supervised worker recovery, disposable GitHub
+automation and detailed browser/accessibility/zoom testing. Historical 12/12 browser
+passes do not establish each detailed matrix item. M3.5 operational acceptance
+remains OPEN; no unrelated gate is closed by the successful restore.
+
+The archive and devflow_recovery_20261117T230002Z_b468b9ee8567 remain available pending
+separate explicit cleanup approval. Do not delete artifacts, drop the recovery
+database or point an application/worker at it under this documentation task.
+
+### Checks performed for this evidence update
+
+Only deploy/M3_5_ACCEPTANCE.md and VERIFICATION.md are edited. Changed-document
+Prettier checks, local Markdown target checks and git diff --check are performed;
+no application tests, SQL, migrations, seeds, workers or automation are run. No
+application/test/configuration files or secret settings change. No commit, push,
+merge or rebase; stop for owner review.
+
+The following Step 1 and earlier sections retain their historical at-the-time
+status. This local restore result supersedes their outstanding logical-backup/
+restore item only, not their key, rollback or worker-recovery requirements.
+
+## Historical state — M3.5 Step 1 verification evidence reconciliation
 
 Confirmed audit/m3-5-operational-acceptance at d21dc1a with a clean working tree
 before edits; local main also resolves to d21dc1a. The owner confirms M3.5 and

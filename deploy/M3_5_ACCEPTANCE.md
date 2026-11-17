@@ -15,13 +15,65 @@ as reported by the owner. M3.5 operational acceptance remains OPEN.**
   verification date is supplied here. The PR link is not a CI-run link.
 - Current main and audit-branch base are d21dc1a. Historical runs and successful PR
   checks are **not proof of a separate full rerun on the squash commit**.
-- Local backup/key restore, rollback and supervised worker/fault-recovery exercises,
-  disposable GitHub automation acceptance and detailed accessibility/zoom evidence
-  remain outstanding. Future production configuration/deployment gates are separate.
+- The owner reports a successful isolated logical backup/restore rehearsal on
+  PostgreSQL 18.6; details below. Encryption-key custody/decryption, rollback,
+  supervised worker recovery, disposable GitHub automation and detailed browser/
+  accessibility/zoom acceptance remain outstanding. Production gates are separate.
 
 This reconciliation occurs on audit/m3-5-operational-acceptance. No worker, DB,
 environment, connection, rule or task changes are authorized. Preserve DEV-002 and
 its history; active exercises require separately approved disposable scope.
+
+## Operational acceptance Step 8 — verified local PostgreSQL recovery rehearsal
+
+**Status: successfully verified for the tested local environment, as reported by
+the owner.** This is a logical database backup-and-restore result, not a production
+recovery, full disaster-recovery exercise or encryption-key continuity proof.
+No execution date is inferred from the recovery database name. No database or
+backup was accessed during this documentation update.
+
+| Item                                       | Owner-reported verified result                                                                |
+| ------------------------------------------ | --------------------------------------------------------------------------------------------- |
+| Environment                                | Fedora Linux 44; Docker PostgreSQL 18.6; no production deployment                             |
+| Existing databases                         | Development devflow; isolated test devflow_test                                               |
+| Development schema                         | All eight Prisma migrations applied                                                           |
+| Source database size / host disk available | Approximately 11 MB / 118 GB                                                                  |
+| Backup format / archive size               | PostgreSQL custom format / approximately 121 KB                                               |
+| Archive integrity                          | SHA-256 checksum passed; pg_restore listing succeeded with 245 entries                        |
+| Restore                                    | Succeeded with --single-transaction and --exit-on-error                                       |
+| Only restore target                        | devflow_recovery_20261117T230002Z_b468b9ee8567                                                |
+| Public tables                              | 33 restored                                                                                   |
+| Prisma migration records                   | Eight completed; zero incomplete; all eight checksums match repository migration files        |
+| Constraints                                | 33 primary keys; 56 foreign keys; zero unvalidated constraints                                |
+| Relationship/activity checks               | Zero orphaned tasks; zero invalid GitHub task links; zero automation activity inconsistencies |
+| Retained artifacts                         | Backup archive and recovery database still exist; **no cleanup authorized**                   |
+
+The existing devflow database was used only as the backup source. Restore writes
+were confined to the separate recovery database; neither devflow nor devflow_test
+was a restore target. No migrations, seeds, GitHub workers or automation ran during
+the rehearsal. The retained recovery database contains real copied data and must
+not be connected to a worker, test runner or application as part of this handoff.
+
+The archive and recovery database remain available for review pending **separate
+explicit cleanup approval**. No backup path, checksum value, secret or private
+application record is included here. No artifact deletion or database cleanup is
+performed or authorized by documenting success.
+
+### Scope and remaining recovery gates
+
+This demonstrates local archive readability, transactional logical restoration,
+expected schema/migration checksums and the reported relationship checks. It does
+not demonstrate host/volume-loss recovery, point-in-time recovery, cluster role/ACL
+restoration, a production restore, measured recovery objectives or application/
+worker artifact rollback. A database archive does not by itself recover the
+server-side TOKEN_ENCRYPTION_KEY. Key custody and offline decryption validation
+remain unverified; no key continuity is claimed.
+
+Keep the following open: encryption-key custody/decryption, compatible rollback,
+supervised worker shutdown/interruption/recovery, disposable GitHub automation,
+detailed browser/accessibility/zoom evidence and final owner signoff. Earlier
+12/12 browser passes and positive normal-zoom inspection remain historical evidence,
+not comprehensive acceptance of that detailed matrix. **M3.5 acceptance remains OPEN.**
 
 ## Historical implementation ledger — originally recorded 2026-11-18
 
@@ -55,9 +107,15 @@ not the complete detailed matrix or a d21dc1a rerun. Live Groq remains unverifie
 - [x] Retention remains read-only, with dependency/preservation rules and incomplete results.
 - [x] Historical SQL 124/124 and later unit/UI 485 results are recorded with their scope.
 - [x] Step 9 runbooks are committed and incorporated in main squash d21dc1a.
-- [ ] Record current local migration-state evidence for operational exercises; before any
-      future production rollout, separately verify its target and eight-migration state.
-- [ ] Backup/key recovery rehearsal and artifact/schema-compatible rollback plan approved.
+- [x] Owner confirms all eight development migrations applied and a successful isolated
+      logical recovery rehearsal with matching migration checksums/relationship checks.
+- [ ] Before a future production rollout, separately verify its target/migration state;
+      production deployment has not started.
+- [ ] Verify encryption-key custody and offline decryption continuity.
+- [ ] Rehearse and approve artifact/schema-compatible rollback; logical DB restore
+      alone does not close this gate.
+- [ ] Obtain separate explicit approval before deleting the retained archive or
+      devflow_recovery_20261117T230002Z_b468b9ee8567; no cleanup is authorized.
 - [x] Owner reports successful PR #1 hosted CI and completed squash merge.
 - [ ] Retain CI run URL/tested SHA/results; establish any required post-squash verification
       explicitly, without attributing historical test totals to d21dc1a.
@@ -184,9 +242,11 @@ Known limits: custom auth lacks MFA/password recovery; classic OAuth uses broad 
 scope; health is PostgreSQL as-of evidence with no external alerting; retention is
 analysis only and may be incomplete above its cap; polling/SSE and DB pools require
 capacity planning. CI uses PostgreSQL16 while local Compose18 needs separate
-operational compatibility review. Production deployment has not started. Local restore/process-interruption and
-detailed acceptance remain unverified; historical browser passes and PR #1 CI
-success are recorded separately above. No such exercises ran during this update.
+operational compatibility review. Production deployment has not started. The
+reported local PostgreSQL 18.6 logical restore is verified above; key recovery,
+rollback, supervised process interruption and detailed acceptance remain open.
+Historical browser passes and PR #1 CI success are separate evidence. No operational
+exercise ran during this documentation update.
 
 **Do not mark M3.5 complete until required outstanding acceptance is recorded and
 reviewed. The completed implementation/merge and milestone operational acceptance are separate.**
