@@ -5,7 +5,11 @@ export class GitHubHttpError extends HttpError {
     public upstreamStatus: number,
     public retryable: boolean,
     public retryAt: number | null = null,
-    public rateLimit: { remaining: number | null; resetAt: number | null } = {
+    public rateLimit: {
+      remaining: number | null;
+      resetAt: number | null;
+      retryAt?: number | null;
+    } = {
       remaining: null,
       resetAt: null,
     },

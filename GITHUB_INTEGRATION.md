@@ -1,4 +1,4 @@
-# GitHub integration — M3.1 through M3.4
+# GitHub integration — M3.1–M3.4 implementation and M3.5 readiness
 
 M3.1 adds secure repository connections and a durable webhook inbox. M3.2 adds a
 separate durable worker, read-only GitHub activity and task associations. Neither
@@ -7,6 +7,21 @@ see the latest M3.3 section for setup and safety semantics.
 M3.4 now adds explicitly confirmed future-event status automation. Its latest
 section below supersedes earlier preview-only deployment notes. Existing OAuth,
 repository browsing, commit history and open-PR reads are retained.
+
+## Current operational status — M3.5 step 9
+
+M3.1–M3.4 source is implemented; M3.5 Steps 1–8 are committed, most recently
+ecee52a. Step 9 deployment/acceptance documentation is prepared. Owner-local full
+PostgreSQL is 124/124 across 11 files and unit/HTTP/DOM is 476 across 49 files;
+static/schema/client/worker/build checks passed. The owner manually verified
+idle/unavailable monitoring, explicit access revalidation and read-only retention.
+Hosted CI and Playwright execution remain outstanding. M3.5 is not complete.
+
+Use [the deployment/recovery runbook](deploy/DEPLOYMENT_RUNBOOK.md) and
+[the current acceptance checklist](deploy/M3_5_ACCEPTANCE.md). The latest
+[verification ledger](VERIFICATION.md) separates current evidence from historical
+blocked sandbox runs. Earlier phase/setup sections below are historical context;
+they do not authorize live rule changes, worker starts or DEV-002 modifications.
 
 ## Architecture decision
 
@@ -753,3 +768,472 @@ These are manual owner actions; the agent did not perform them or claim live suc
 Real GitHub and browser acceptance remain local gates. Unit mocks/browser fixtures
 are not substitutes for this new-PR procedure. M3.5 operations/retention/alerting,
 additional actions/conditions and unrelated milestones remain out of scope.
+
+## M3.5 operational acceptance ledger — baseline 2026-11-15
+
+The owner reports M1 through M3.4 complete. This ledger records the evidence available
+for the new operational milestone; it does not negate those implementation reports
+or infer fresh live acceptance from them. The current baseline uses branch
+`feat/m3-5-operational-readiness` at `48d7b5c`. Details: VERIFICATION.md.
+
+| Gate                                           | Evidence at this baseline                                                                                            | State                                                    |
+| ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| Unit/static/build regression                   | 326 unit tests; schema/client, lint, worker and webpack checks pass; type/format results recorded in VERIFICATION.md | Available baseline evidence                              |
+| Repository-wide formatting                     | Four unchanged source/test files fail the full formatter; changed milestone documents pass                           | Follow-up focused formatting change required             |
+| Real SQL/concurrency/rollback                  | Guarded devflow_test run cannot reach localhost:5433; six setup failures, 82 skipped                                 | Blocked here; actual local result required               |
+| Browser and visual acceptance                  | EPERM at localhost:3100 before server startup; 12 cases discovered, zero executed; no screenshots                    | Blocked here; desktop/mobile evidence required           |
+| Signed ingestion and task association          | Historical owner-verified ping/push and commit/task linking retained in earlier records                              | Historical evidence; no new live action performed        |
+| New eligible PR automation and redelivery      | M3.4 tests/runbook exist; no fresh M3.5 live execution evidence collected in this step                               | Pending separately authorized owner-run acceptance       |
+| Idle/unavailable/bounded/unknown worker health | Existing logs/queue data; lightweight scoped monitoring is the next approved implementation step                     | Pending implementation and acceptance                    |
+| Restart/recovery and revocation lifecycle      | Existing guards and mocked/integration scenarios; fresh operational process evidence not collected                   | Pending isolated and owner-run acceptance                |
+| Explicit connection diagnostics                | Current transport/grants reused; no new revalidation operation yet                                                   | Pending implementation; no automatic retarget/disconnect |
+| Retention impact                               | Current provenance/idempotency FKs identified; no cleanup introduced                                                 | Pending read-only report/policy; no deletion/archive     |
+| Isolated CI and deployment evidence            | Example worker unit/runbook exists; no M3.5 Actions workflow yet                                                     | Pending implementation/execution; no push authorized     |
+
+The next changes must reuse the existing PostgreSQL queue/executor and administrator
+panels, exposing only authorized, sanitized metadata. OAuth authorization, webhook
+verification and worker liveness are separate signals: one must not be fabricated
+from another. An idle worker, bounded run or missing evidence must not trigger a
+misleading failure claim. New health persistence, if needed, uses additive migrations
+first verified on isolated devflow_test; no production migration is automatic.
+
+Retention is read-only policy, dependency analysis and dry-run impact reporting.
+Delivery uniqueness, semantic claims, immutable observations, task-link evidence,
+rule snapshots and machine activity are protected data, not blanket TTL candidates.
+No records may be removed or archived as part of this milestone. Existing failed
+delivery retry controls remain authorized and bounded; no diagnostic may replay
+processed/historical events or force a terminal task execution.
+
+Fresh live lifecycle acceptance must use an explicitly authorized disposable test
+scope. The existing M3.4 DEV-002 procedure documents earlier acceptance instructions;
+it is not standing authorization to modify DEV-002 or enable its live rule. The
+agent will not use live credentials, create hooks, revoke grants, merge PRs, enable
+rules or silently change repository identity/connection state. Required external
+actions remain owner-run or need separate explicit approval.
+
+Step 1 pauses for the owner's documentation commit confirmation. M3.5 remains open
+until the required tests and real acceptance gates are actually satisfied. Generic
+workflow builders/email/actions, Redis, a GitHub App migration and M4 collaborative
+documentation are outside the approved operational scope.
+
+## M3.5 step 2 — durable worker-health evidence
+
+This step adds persistence and classification only. Administrator API/panel work
+is steps 3–4; existing panels are unchanged. Migration
+`202611150003_github_worker_health` adds `GitHubWorkerSignal`, `GitHubWorkerMode`
+and `GitHubWorkerRunState`. It inserts no seed data and alters no queue, task,
+rule, execution, observation or receipt rows. Apply to devflow_test first using
+the guarded commands in VERIFICATION.md; database acceptance is blocked here.
+Do not deploy the new worker against an unmigrated database.
+
+Each worker process generates a random run ID. Each eligible repository connection
+gets one signal row per run, scoped by composite connection/project/workspace
+foreign keys. Global workers cover active connections in non-archived projects;
+GITHUB_WORKER_CONNECTION_ID limits coverage. New eligible connections are discovered
+on later pulses. A worker with no eligible connections produces no scoped signal;
+that is insufficient evidence, not a failed worker.
+
+- Initial signal writes must succeed before claiming any work. Missing migration
+  or database access fails startup without claiming events.
+- Heartbeats run every 10 seconds independently of job processing and idle polling.
+  After startup and the first completed poll, fast queue polls/progress are coalesced
+  into the periodic pulse, with a final flush on shutdown. Writes are serialized,
+  slow periodic writes coalesced, and timers drained on shutdown.
+  PostgreSQL supplies timestamps. Project key-share locks precede connection FK
+  checks; no queue locks, external requests or task writes occur in these short
+  monitoring transactions. Existing lease renewal/fencing remains separate.
+- polledAt records a completed queue batch. idleAt records an empty batch and is
+  cleared on the next nonempty batch. It is an as-of observation, not a promise
+  that no work arrived afterward. Future-dated/backoff work does not make an idle
+  worker unhealthy.
+- progressAt records a settled attempt only for its server-resolved connection.
+  It is a database persistence timestamp (up to one heartbeat interval after the
+  observation), not an exact event timestamp. It may represent successful, failed,
+  conflicted or cancelled processing; it is
+  not a success counter. Existing delivery/execution receipts remain authoritative.
+  Worker crashes can lose the latest in-memory progress signal; never job effects
+  already committed to PostgreSQL. No automated task mutation is added by monitoring.
+- Each row stores its stale interval: max(45 seconds, 3 × configured poll interval
+  - 10 seconds), accommodating the existing maximum 60-second polling option.
+- Terminal run states are COMPLETED (bounded run), STOPPED (graceful signal) and
+  FAILED (runtime failure); unexpected process death leaves RUNNING evidence to
+  age out. Finalization cannot revive a terminal row, and late pulses cannot
+  overwrite it. Each replacement process has a separate run ID.
+- Later monitoring write failures log only WORKER_HEALTH_WRITE_FAILED and retry
+  on later pulses; they never re-execute a job or change its retry policy. Shutdown
+  write failure leaves old evidence to age out rather than inventing a clean exit.
+
+Classifier semantics for a **single authorized connection**:
+
+| State                 | Meaning                                                                                                                                                                                   |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| HEALTHY_IDLE          | Fresh continuous heartbeat and completed poll; latest batch empty. No completed jobs are required.                                                                                        |
+| HEALTHY_ACTIVE        | Fresh continuous heartbeat and completed poll; latest batch did work. Not a claim that an individual job succeeded.                                                                       |
+| UNAVAILABLE           | Continuous worker evidence exists, but no fresh RUNNING heartbeat remains (or continuous runs ended). Means no fresh continuous signal, not proof of host failure or a queue-delay alert. |
+| BOUNDED_RUN           | Only --once evidence exists; even a fresh RUNNING bounded process is not proof of continuous service.                                                                                     |
+| INSUFFICIENT_EVIDENCE | No signal, future clock evidence, or fresh heartbeat without recent poll evidence. Long in-flight work may retain heartbeat but need inspection rather than an unavailable alert.         |
+
+A fresh continuous replica overrides stale replicas. A bounded run does not restore
+continuous availability after known continuous workers stop. Readers must first
+validate authorization and connection/project state; a retained signal must not
+make a disconnected/archived scope appear operational. The pure classifier does
+not provide access control, query databases or grant any execution rights.
+
+Storage is lightweight (one row per run/connection, updated in place). Historical
+runs are retained; there is no retention deletion, archival, pruning job or external
+monitoring service. Large installations should scope worker instances as needed.
+No hostnames, OAuth tokens, webhook secrets, payloads or cross-scope job counts
+are stored. A run ID is an internal correlation identifier, not a credential.
+
+## M3.5 step 3 — administrator operational health API
+
+```text
+GET /api/github/repositories/:connectionId/health?workspaceId=:workspaceId
+```
+
+Uses the session's authenticated user, workspace membership and existing
+owner/admin-only authorizeGitHubProject helper. Project scope is derived from
+the connection in that workspace; arbitrary userId/projectId query parameters
+cannot override it. Members receive 403, missing membership and foreign connections
+404, and unauthenticated requests 401. This endpoint has no POST/PATCH/DELETE
+actions. Success and error responses use Cache-Control: no-store.
+
+The response is an as-of database-clock RepeatableRead snapshot:
+
+- scope: authorized workspace/project/connection identifiers and disconnected/
+  archived flags. No provider credentials or identities are returned.
+- worker: step 2 classifier state, lastHeartbeatAt, lastPollAt,
+  lastAttemptProgressAt and lastBoundedHeartbeatAt. Timestamps may be null.
+  DISCONNECTED or PROJECT_ARCHIVED overrides worker health. Run IDs and raw signal
+  rows are omitted. Evidence buckets retain a representative of each relevant
+  condition, including a healthy replica among many more recent stalled replicas;
+  no arbitrary recent-row LIMIT changes the meaning of availability.
+- deliveries: total, pending, failed, processed, cancelled, processing;
+  ready/scheduled (PENDING or non-dead-lettered FAILED receipts at/before or after
+  asOf); expiredLeases (PROCESSING with absent/expired lease); deadLettered (FAILED
+  with a dead-letter timestamp); oldestReadyAt (original receipt time),
+  nextScheduledAt, lastReceivedAt, lastProcessedAt.
+- automation: total, pending, applied, skipped, conflicted, failed; ready/scheduled
+  pending executions and oldestReadyAt (creation time), nextScheduledAt.
+- diagnostics: static code/message pairs explaining missing evidence, bounded-only
+  service, missing continuous signals, unavailable scope, scheduled work, expired
+  leases, dead letters and terminal automation outcomes. No free-form stored error
+  or payload content is used. No diagnosis triggers a retry, external call or action.
+
+Counts are not mutually exclusive: e.g. expiredLeases is a subset of processing;
+ready/scheduled overlap lifecycle totals. Do not sum all fields or interpret counts
+as task mutations. Scheduled-ready means the timestamp is due, not that a retry
+budget, repository or rule is eligible: the worker revalidates those conditions.
+Future retry/backoff is informational, not proof of failure. A heartbeat/poll is
+as-of evidence, not an instantaneous queue/host availability guarantee.
+
+No migration, worker start, OAuth/enrichment request, rule edit or automatic retry
+is performed by this read. Check terminal records through existing processing/
+execution history before taking separately authorized action. Existing rules and
+DEV-002 remain untouched. Connection revalidation remains step 5, health panels
+step 4; this is not a new UI or operational alerting service.
+
+Use an already authenticated administrator session to inspect the URL. Local API
+and database regression commands are in VERIFICATION.md; no live GitHub/Groq
+credentials are required. Fedora integration counts were not supplied in the
+request, and the sandbox's guarded devflow_test probe is still unreachable. Do
+not infer database acceptance from unit mocks or an HTTP fixture alone.
+
+## M3.5 step 4 — viewing operational health
+
+Open **GitHub** in application navigation, select the project in the existing
+repository/project controls, and find **Operational health** inside **GitHub event
+processing**. Only workspace owners/admins see this section or request the health
+API. With no selected connection, the section explains how to select one; it does
+not create or reconnect anything. Ordinary members retain the existing authorized
+activity view without administrator summaries.
+
+The section shows the Step 3 snapshot, using friendly labels for healthy idle,
+active, unavailable, bounded run, insufficient evidence, disconnected and archived
+states. Zero recorded work does not mean a worker is unavailable. Cards separate
+ready/scheduled/processing deliveries, expired leases, failures/dead letters and
+workflow outcomes. Scheduled work includes possible retry backoff; counts overlap
+and cannot be summed into a task-change total. Missing timestamps say Not observed.
+Worker timestamps and known operational guidance use keyboard-operable collapsed
+disclosures. Use existing delivery controls/history for individual records;
+automation outcomes remain in the existing project workflow settings history.
+
+**Refresh operational health** performs a GET only; normal polling is 30 seconds
+in the foreground, with no automatic retries beyond later polls. Access denial
+stops automatic polling. No worker start, credential request, retry, rule enablement
+or task change is attached to refresh. The existing explicit retry/enrichment
+controls retain their prior behavior. Server administrator authorization remains
+the enforcement boundary; client hiding alone is not authorization.
+
+Client cache keys include workspace/project/connection, returned scope must match,
+and old scope data is not carried into a new selection. Mounts revalidate before
+showing cached data; role loss or 401/403/404 hides it. Refresh failures retain
+previously authorized data only as **Last observed** with a stale warning. Age over
+90 seconds also marks a snapshot stale; device-clock differences prompt verification.
+Stale summaries lose healthy emphasis. Historical disconnected/archived scope
+never implies a healthy continuous worker. Errors use generic copy and guidance
+uses known code mappings; arbitrary response messages/extra fields are not shown.
+
+Styles reuse DevFlow light/dark variables and responsive content grids; no fixed
+height, nested scroll area or unrelated layout change is added. The new Playwright
+journey is intended to capture both themes at 1440, 1024, 768 and 390 pixels in
+both configured browser projects. Those checks are unexecuted here: DOM/theme
+semantics and builds do not prove visual or responsive acceptance. Run the local
+commands in VERIFICATION.md and inspect screenshots before closing that gate.
+
+## M3.5 step 5 — explicit connection revalidation
+
+In **GitHub → GitHub event processing → Connection revalidation**, an owner/admin
+may click **Revalidate GitHub access**. This is an intentional external read, not
+part of health refresh/polling. No check runs on mount, reconnect, scope change,
+background timer or retry automatically. Offline attempts fail rather than queueing
+for later. Leaving this scope clears the displayed result; it is not a durable
+access grant or a replacement for worker/webhook health.
+
+```text
+POST /api/github/repositories/:connectionId/revalidate?workspaceId=:workspaceId
+Content-Type: application/json
+Body: {}
+```
+
+The existing same-origin/session/workspace checks and administrator project
+helper enforce authorization. Members cannot invoke this operation, foreign
+connections return 404 and body identity/settings overrides are rejected. Success
+and action errors are no-store. Provider failures become fixed evidence codes;
+raw provider messages, tokens, credential hashes and observed repository/account
+metadata are omitted. The UI renders allowlisted local copy and validates scope.
+
+Credential selection is deliberately conservative:
+
+- A complete enrichment grant is checked only by its authorizing administrator.
+  Another administrator receives OTHER_ENRICHMENT_AUTHORIZER without loading or
+  using that member's token. The authorizer must run their own explicit check.
+- With no enrichment grant, the requesting administrator's own linked OAuth account
+  is checked. A valid result does not enable enrichment or validate someone else's
+  grant. Partial/inconsistent grants are inconclusive without a fallback.
+- No stored OAuth account is NOT_CONFIGURED, not proof of revocation. Unreadable
+  encrypted credentials are inconclusive and require manual server configuration
+  review. No credential is rotated, refreshed, replaced or silently reconnected.
+
+The bounded check performs GET /user and GET /repos/{stored owner/repository}
+through the existing GitHub transport (15-second per-request bound, redirects
+rejected, fixed GitHub origin, bounded response). No provider write or arbitrary
+webhook-supplied URL is used. ID/name must match the stored identity; account login
+must match its stored OAuth login. Case-only differences do not retarget records.
+Account/repository renames, transfers or replacements are reported for manual review,
+not repaired. Administrator permission must be explicitly true. Missing evidence
+is inconclusive; explicitly false is insufficient permission. Archived/disabled
+repositories are inaccessible. A valid result verifies authentication and repository
+metadata/admin evidence only, not every enrichment API scope, webhook permission,
+registration, signature, delivery or execution rule.
+
+Evidence states:
+
+| State                           | Evidence / limitation                                                                                                                                                          |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| VALID                           | Authentication, stored identity, active repository and explicit administrator permission verified for the indicated account/source.                                            |
+| AUTHORIZATION_REJECTED          | GitHub returned 401; revoked, expired and invalid cannot be distinguished. Existing OAuth storage has no expiry metadata; no age-based inference is made.                      |
+| INACCESSIBLE                    | Repository 404/403 after account authentication, inactive repository or explicit repository identity mismatch. A 404 does not prove deletion; a 403 does not prove revocation. |
+| INSUFFICIENT_PERMISSION         | Repository response explicitly reports admin=false.                                                                                                                            |
+| NOT_CONFIGURED                  | The checked administrator's OAuth account is absent.                                                                                                                           |
+| INCONCLUSIVE                    | Missing permission evidence, another grant authorizer, changed account/configuration, provider/rate-limit/network failure or unrecognized response.                            |
+| DISCONNECTED / PROJECT_ARCHIVED | Current local scope is unavailable; never reconnected or restored by the check.                                                                                                |
+
+Authorization, stored identity, grant version/authorizer and credential fingerprint
+are checked before/between provider reads and before returning results. Concurrent
+role loss, disconnect, archive, credential replacement or grant edits cannot publish
+stale positive evidence. External requests run outside database transactions.
+A response is still point-in-time evidence, not a guarantee about later access.
+
+The only runtime writes are existing operational RateLimit records: three checks
+per minute for external-capable checks per workspace/connection/requesting administrator, plus shared encrypted-
+credential-hash cooldowns when real rate-limit headers provide timing. Cooldown
+updates use GREATEST, never shorten an existing delay, and reuse worker infrastructure.
+Provider-header deadlines are distinguished from recorded local cooldowns, which
+may reflect the existing worker's fallback scheduling. A provider 429 without
+observed timing returns no guessed retry time. UI waits for known deadlines but
+never retries automatically; local HTTP 429 budgets simply advise retrying later.
+Existing transport retry/lease/replay behavior is unchanged; the small transport
+change types observed header timing already carried by GitHubHttpError.
+
+No tasks, activities, rules, connections, credentials, webhook registrations,
+GitHub objects, observations or delivery/execution receipts are mutated. No schema
+migration or new external service is needed. No diagnostic history/retention deletion
+is added. Manual OAuth repair or repository reconfiguration is a separate explicit
+operation; this button never takes those actions for you.
+
+Tests mock provider HTTP responses; real PostgreSQL cases use only devflow_test
+and fresh fixtures. The browser journey intercepts diagnostic POSTs and checks that
+none runs before an explicit click. Those browser/database/live gates remain
+unexecuted here; see VERIFICATION.md for actual counts and Fedora commands. Do not
+interpret a mock valid result as validation of a live connection.
+
+## M3.5 step 6 — read-only retention impact reports
+
+Open GitHub → existing project → GitHub event processing → **Retention impact
+report**. Choose a proposed 7, 30 or 90 days and click **Generate read-only report**.
+Only owners/admins see/report this data. No report runs on mount or polling; window
+changes clear the prior result and require another explicit GET. The proposal is
+not saved. There is no delete/archive/schedule/execute control or API.
+
+```text
+GET /api/github/projects/:projectId/retention?workspaceId=:workspaceId&days=30
+```
+
+Uses authenticated identity and existing administrator project authorization. Both
+success and error results are no-store. All queries filter the authorized project/
+workspace; disconnected connections are intentionally included. This project-wide
+scope differs from the neighboring single-connection health snapshot. Payloads,
+OAuth/webhook secrets, record IDs, titles, raw errors, task references and other
+users' data are not returned. Schema validation/scope matching and generic UI errors
+prevent stale/foreign responses from being displayed. Role loss unmounts the report.
+
+The UTC DB transaction clock establishes the cutoff: strictly older than N × 24
+hours. Exact-cutoff and future-dated records remain within-window. Counts and raw
+oldest/newest timestamps are provided, with approximate age-in-days UI ranges.
+Age bases and conservative preservation policy:
+
+| Category                        | Age basis                                  | Older-record policy                                                                                                                                                      |
+| ------------------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Webhook deliveries / processing | receivedAt                                 | Pending/processing active; failed unresolved; processed/cancelled receipts preserved for replay/hash deduplication. Receipt deletion is never proposed.                  |
+| Observations                    | receivedAt                                 | Incomplete/unresolved references protected; all immutable source provenance retained, linked or unlinked.                                                                |
+| GitHub objects                  | createdAt                                  | Current projections and stable object identities retained, including objects without currently linked tasks.                                                             |
+| Task associations               | createdAt                                  | Current task associations retained.                                                                                                                                      |
+| Link evidence                   | Observation receivedAt                     | Audit evidence retained. Evidence has no independent creation timestamp; do not infer one.                                                                               |
+| Workflow executions             | Greatest createdAt/startedAt/completedAt   | Pending active; failed/conflicted unresolved; applied/skipped audit/idempotency history retained. Logical claim/duplicate history and activity attribution must survive. |
+| Worker signals                  | Greatest start/heartbeat/poll/progress/end | RUNNING/unfinished and FAILED retained. Only older COMPLETED/STOPPED superseded evidence may be a potential candidate, subject to preserved anchors below.               |
+
+Worker anchors preserve the most recent heartbeat per connection/mode, latest
+non-future heartbeat evidence, and latest poll/progress evidence (including the
+latest non-future values). Ties for maximum poll/progress are conservatively kept.
+A newer idle run must not erase the only progress-bearing older run. Crashed RUNNING
+records do not become terminal merely by aging. No retention execution or automatic
+state resolution is implemented.
+
+Primary reason buckets partition category records; WITHIN_WINDOW takes precedence.
+Older records with downstream DB references are also counted separately using FK
+relationships: observation/execution provenance, task-link evidence and automation
+activity. That dependency count overlaps primary reasons; do not sum it into totals.
+Candidate counts apply only to independently safe historical worker evidence under
+this proposed policy. They are not approval to delete anything. Future cleanup would
+need a separately reviewed design and fresh relationship/state checks; none exists
+here. No replay expiry, receipt tombstone or audit-erasure policy is assumed.
+
+Reporting boundaries:
+
+- Seven SQL categories return grouped counts/date ranges only, with source metadata
+  capped at 10,001 matching rows. At most 10,000 are analyzed per category. Larger
+  categories return complete=false, scannedAtLeast=10001 and null totals/ages/
+  candidate counts. This is a lower bound, not an estimate or sampled eligibility.
+- Representative worker ranking occurs only in the capped complete set. Incomplete
+  categories produce no cleanup conclusion; complete categories are still reports,
+  not actions. No overall storage-savings figure or sum of overlapping entities is
+  presented. The UI clearly marks incomplete and empty reports differently.
+- Queries use existing workspace/project/connection and FK indexes, bounded response
+  size, explicit SET TRANSACTION READ ONLY, RepeatableRead, 4-second per-statement
+  and 15-second transaction limits. These settings are transaction-local; they do
+  not save policy or mutate operational records. Planner/disk work can vary; local
+  EXPLAIN/runtime verification is still required. Timeout means report failure,
+  never a partial successful eligibility list.
+- Configuration, OAuth, webhook secrets, tasks, workflow definitions/revisions and
+  global credential rate-limit records are outside this operational-record report.
+  No connection, rule, receipt, activity or worker record is changed.
+
+Unit/DOM tests run with fixtures. Real PostgreSQL tests include exact cutoffs for
+all windows, provenance/reference preservation, old active/unresolved state,
+worker anchors (including future timestamps/older progress), scoped disconnected
+history, metadata overflow and a rejected write in an isolated read-only transaction.
+These database cases and browser screenshots remain unexecuted here; see
+VERIFICATION.md for actual results and safe Fedora commands. No live GitHub action
+or worker is needed to generate a report.
+
+## M3.5 step 7 — failure/recovery coverage index
+
+The Step 6 owner-local result is 117/117 PostgreSQL cases across 10 files. The
+following new coverage extends that baseline; its PostgreSQL/browser portions
+have not executed in this sandbox. Tests only use fresh devflow_test fixtures and
+mocked/rejected provider responses, never existing live rules, tokens or DEV-002.
+
+| Journey / safeguard                                                                                         | Coverage                                                                                | Execution evidence here                                                           |
+| ----------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| Aborted startup, shutdown while recovering, in-flight sibling draining                                      | github-operations-recovery.test.ts; existing worker tests                               | Passed unit tests                                                                 |
+| Telemetry outage → stale/unavailable → fresh heartbeat without poll → active → graceful stop                | github-operations-recovery.test.ts                                                      | Passed with fake timers/in-memory telemetry storage; not a database/process test  |
+| Health-store shutdown failure preserves primary error and sanitized logs                                    | github-operations-recovery.test.ts                                                      | Passed unit test                                                                  |
+| Startup storage failure leaves receipt pending/unclaimed                                                    | github-operational-recovery.integration.test.ts                                         | Written; PostgreSQL execution pending                                             |
+| Actual fixture processing → active/idle health → STOPPED; unchanged task/rule                               | github-operational-recovery.integration.test.ts                                         | Written; PostgreSQL execution pending                                             |
+| Interrupted lease/stale signal, fencing, bounded recovery vs continuous evidence                            | github-operational-recovery.integration.test.ts                                         | Written; PostgreSQL execution pending; interruption state simulated               |
+| Retry deadline, dead letter, member denial and explicit owner retry                                         | github-operational-recovery.integration.test.ts                                         | Written; PostgreSQL execution pending                                             |
+| Signed duplicate/body replay, invalid signature and changed-content receipt conflict                        | github-operational-recovery.integration.test.ts; existing webhook tests                 | New DB journey pending; existing unit signature/replay regressions pass           |
+| Workspace/project isolation and no private error text in recovery summaries                                 | github-operational-recovery.integration.test.ts; operational-health service/route tests | New DB journey pending; existing unit/HTTP regressions pass                       |
+| Account/repository timeout signal, explicit recovery, no automatic retry                                    | github-revalidation.test.ts                                                             | Passed mocked HTTP tests; controlled abort, not real 15-second wall-clock timeout |
+| Authorization rejection, insufficient/absent permission, inaccessible/policy/429 and inconclusive responses | github-revalidation.test.ts and prior suites                                            | Passed mocked tests; not live GitHub                                              |
+| Observed provider cooldown → local no-request result → explicit success after simulated expiry              | github-revalidation.integration.test.ts                                                 | New DB journey pending                                                            |
+| Retention exact cutoffs/caps/audit protection/read-only enforcement                                         | github-retention.integration.test.ts                                                    | Owner Step 6 DB suite evidence; no fresh sandbox execution                        |
+| Retention query failure cannot publish partial/zero or stale eligibility                                    | github-retention\*.test.ts                                                              | Passed service/HTTP/DOM tests                                                     |
+| Health unavailable→idle, auth rejection→explicit success, incomplete/error report→complete                  | e2e/github-health.spec.ts                                                               | Discovered only; browser execution/screenshots pending                            |
+| Automation atomicity/idempotency/task-version/activity and AI/roadmap boundaries                            | Existing automation/agent/roadmap suites                                                | Unit regressions pass; owner Step 6 DB baseline covers older integration cases    |
+
+Controlled PostgreSQL worker tests call the runtime/functions in process with an
+explicit fresh connection ID and bounded/shutdown controls. They never start a live
+CLI/systemd worker. Telemetry callbacks force a sample to avoid arbitrary sleeps;
+periodic timer behavior is separately tested in unit cases. An interrupted worker
+is modeled by abandoned leased rows and stale RUNNING evidence. Real process signals,
+service-manager restart, PostgreSQL/container outage and live GitHub acceptance
+remain separate owner-run operational gates. Do not treat these fixtures as proof
+that an OS process was killed or a live deployment recovered.
+
+Receipt/event effects remain at-least-once/idempotent, not exactly-once execution.
+A processed ping produces no task automation. Failed/expired leases cannot be
+completed/renewed by their previous owner. A bounded recovery run does not by itself
+prove a continuous worker is deployed. Failed telemetry writes do not change queue
+retry policy or fabricate a clean terminal heartbeat. Retention continues to preserve
+old RUNNING evidence rather than resolving it automatically.
+
+No worker/runtime/API/schema code was changed for Step 7: focused failure tests
+passed against the existing safeguards. Run the updated isolated DB and browser
+commands in VERIFICATION.md before closing their new gates. No live retry, rule
+change, credential revocation or service restart was performed by the agent.
+
+## M3.5 step 8 — isolated verification pipeline
+
+.github/workflows/ci.yml verifies ordinary PRs and conventional branch pushes on a
+fresh GitHub-hosted Ubuntu runner. It uses ephemeral PostgreSQL 16 / devflow_test;
+no OAuth, webhook, AI, deployment or environment secrets are configured or needed.
+Existing provider tests inject mocks. Worker code is compiled, never started.
+Database tests may create enabled automation **fixtures only in devflow_test**;
+they never change real rules, connections, tasks or DEV-002.
+
+The CI-only scripts/ci-verification.ts checks the hosted runner and exact database
+URLs before migration deployment or integration execution. DATABASE_URL otherwise
+points to an unreachable loopback port with a distinct sentinel database name.
+There is no reference to local port 5433, production, hosted databases, environment
+files or backup data. No reset/reseed/cleanup command or persistent volume is used.
+PostgreSQL service credentials are public, disposable fixture values.
+
+See VERIFICATION.md → M3.5 Step 8 for workflow stages, package/action pins, cache
+scope, failure handling, Fedora commands and troubleshooting. Passing local checks
+or workflow parsing is not hosted CI acceptance. Hosted runs, browser gates and
+required live operational acceptance remain pending; no push or live action was
+performed during implementation. Step 9 awaits the owner's Step 8 commit confirmation.
+
+## M3.5 step 9 — deployment and acceptance handoff
+
+The canonical runbooks are deploy/DEPLOYMENT_RUNBOOK.md (operations) and
+deploy/M3_5_ACCEPTANCE.md (all nine steps, evidence and open gates). Reviewed against
+current source/configuration; no application/schema/worker/API changes or new
+migration are needed. Production uses pnpm build:webpack then pnpm start and a
+separately supervised compiled worker; pnpm dev remains a local-development command,
+not the production startup instruction in older phase examples.
+
+Current schema has eight migrations through 202611150003_github_worker_health.
+Preserve the existing encryption key and database history. Revalidation remains an
+explicit administrator-authorized external read; retention is strictly analysis,
+never deletion/archive/scheduling. Restarting a worker can execute already-authorized
+pending automation: it is not a read-only smoke command. No live worker, rule,
+GitHub resource, task or DEV-002 was touched during this documentation change.
+
+Owner-confirmed full SQL is now 124/124, including the six recovery-file cases and
+separate revalidation cooldown regression. Hosted CI/browser and required supervised
+live journeys remain pending. Push requires explicit approval, final-SHA CI evidence
+must be inspected, and merge requires separate review/approval. M3.5 cannot be closed
+merely because Step 9 documentation is committed. Wait for the owner's local commit.

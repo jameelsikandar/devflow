@@ -4,7 +4,7 @@
   border-radius: 9px;
   padding: 16px;
   background: var(--surface-raised);
-  font-size: 12px;
+  font-size: var(--font-size-description);
 }
 .agent-proposal > header {
   display: flex;
@@ -16,18 +16,18 @@
   margin-left: auto;
   padding: 2px 7px;
   background: var(--accent-bg);
-  font-size: 9px;
+  font-size: var(--font-size-metadata);
   border-radius: 4px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 .agent-proposal-project {
   color: var(--muted);
-  font-size: 10px;
+  font-size: var(--font-size-metadata);
   margin: 8px 0 15px;
 }
 .agent-proposal h3 {
-  font-size: 14px;
+  font-size: var(--font-size-subheading);
   margin-bottom: 8px;
 }
 .agent-change-list {
@@ -44,12 +44,12 @@
 }
 .agent-change-list dt {
   color: var(--muted);
-  font-size: 11px;
+  font-size: var(--font-size-description);
 }
 .agent-change-list dd {
   margin: 0;
   white-space: pre-wrap;
-  font-size: 11px;
+  font-size: var(--font-size-description);
   overflow-wrap: anywhere;
 }
 .agent-change-list dd strong {
@@ -76,14 +76,14 @@
 }
 .agent-proposal footer small {
   color: var(--muted);
-  font-size: 10px;
+  font-size: var(--font-size-metadata);
 }
 .agent-receipt {
   color: var(--green);
   display: flex;
   gap: 7px;
   align-items: center;
-  font-size: 11px;
+  font-size: var(--font-size-description);
 }
 .agent-receipt button {
   margin-left: auto;
@@ -101,7 +101,7 @@
 }
 .agent-artifact > summary > span {
   margin-left: auto;
-  font-size: 10px;
+  font-size: var(--font-size-metadata);
   color: var(--muted);
 }
 .agent-artifact p {
@@ -111,7 +111,7 @@
 .agent-artifact li > span,
 .agent-footnote {
   color: var(--muted);
-  font-size: 10px;
+  font-size: var(--font-size-metadata);
 }
 .agent-artifact ul {
   padding-left: 20px;
@@ -125,7 +125,7 @@
   max-height: 300px;
   padding: 12px;
   background: var(--background);
-  font-size: 11px;
+  font-size: var(--font-size-code);
   border: 1px solid var(--border);
   border-radius: 6px;
 }

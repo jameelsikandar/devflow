@@ -1,0 +1,48 @@
+.github-retention-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.github-retention-controls label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--font-size-control);
+  color: var(--secondary);
+}
+.github-retention-table-wrap {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  margin-block: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.github-retention-table-wrap:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.github-retention-table {
+  width: 100%;
+  min-width: 690px;
+  border-collapse: collapse;
+  font-size: var(--font-size-description);
+  text-align: left;
+}
+.github-retention-table caption {
+  text-align: left;
+  padding: 10px;
+  color: var(--secondary);
+}
+.github-retention-table th,
+.github-retention-table td {
+  padding: 9px 10px;
+  border-top: 1px solid var(--border);
+  font-variant-numeric: tabular-nums;
+  vertical-align: top;
+}
+.github-retention-table thead {
+  background: var(--surface-raised);
+}

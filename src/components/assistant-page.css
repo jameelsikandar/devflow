@@ -39,7 +39,7 @@
   flex: none;
 }
 .assistant-toolbar h1 {
-  font-size: 18px;
+  font-size: var(--font-size-section);
   font-weight: 600;
 }
 .assistant-mode-tabs {
@@ -80,11 +80,11 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 13px;
+  font-size: var(--font-size-subheading);
 }
 .agent-history .panel-heading p,
 .agent-history-drawer .panel-heading p {
-  font-size: 11px;
+  font-size: var(--font-size-metadata);
   margin-top: 6px;
 }
 .agent-history nav,
@@ -117,12 +117,12 @@
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  font-size: 12px;
+  font-size: var(--font-size-control);
   line-height: 1.5;
 }
 .agent-history-item small {
   display: block;
-  font-size: 10px;
+  font-size: var(--font-size-metadata);
   margin-top: 4px;
   color: var(--muted);
   overflow: hidden;
@@ -141,7 +141,7 @@
   padding: 8px 4px 0;
   border-top: 1px solid var(--border);
   color: var(--muted);
-  font-size: 11px;
+  font-size: var(--font-size-metadata);
 }
 .agent-privacy summary {
   display: flex;
@@ -177,7 +177,7 @@
   flex: 1;
 }
 .agent-chat-heading h2 {
-  font-size: 14px;
+  font-size: var(--font-size-subheading);
   font-weight: 600;
   margin-bottom: 4px;
   overflow: hidden;
@@ -191,7 +191,7 @@
   border-radius: 6px;
 }
 .agent-context {
-  font-size: 11px;
+  font-size: var(--font-size-metadata);
   color: var(--secondary);
 }
 .agent-context > summary {
@@ -216,7 +216,7 @@
 }
 .agent-context-options p {
   margin-bottom: 8px;
-  font-size: 12px;
+  font-size: var(--font-size-description);
 }
 .agent-scope-note button {
   display: block;
@@ -231,7 +231,7 @@
 .agent-scope-select select {
   min-height: 36px;
   max-width: 100%;
-  font-size: 12px;
+  font-size: var(--font-size-control);
 }
 .agent-scope-help {
   margin-top: 12px;
@@ -248,7 +248,7 @@
 .agent-panel-tabs button {
   padding: 6px 8px;
   border-radius: 5px;
-  font-size: 11px;
+  font-size: var(--font-size-control);
   color: var(--muted);
 }
 .agent-panel-tabs button[aria-pressed='true'] {
@@ -285,11 +285,11 @@
   color: var(--accent);
 }
 .agent-welcome h3 {
-  font-size: 20px;
+  font-size: 1.25rem;
   margin: 14px 0 8px;
 }
 .agent-welcome p {
-  font-size: 13px;
+  font-size: var(--font-size-metadata);
   line-height: 1.7;
   color: var(--secondary);
 }
@@ -304,7 +304,7 @@
   padding: 5px 9px;
   border: 1px solid var(--border);
   border-radius: 6px;
-  font-size: 11px;
+  font-size: var(--font-size-control);
   color: var(--secondary);
 }
 .agent-prompts button:hover,
@@ -337,8 +337,8 @@
   min-height: 40px;
   max-height: 144px;
   padding: 9px 12px;
-  font-size: 14px;
-  line-height: 20px;
+  font-size: var(--font-size-input);
+  line-height: 1.4;
   resize: none;
   background: var(--surface-raised);
 }
@@ -350,18 +350,18 @@
   display: block;
   margin: 6px auto 0;
   color: var(--muted);
-  font-size: 10px;
+  font-size: var(--font-size-metadata);
   max-width: 980px;
 }
 .agent-composer .form-error {
-  font-size: 12px;
+  font-size: var(--font-size-metadata);
   margin-top: 8px;
 }
 .agent-thinking {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 12px;
+  font-size: var(--font-size-description);
   color: var(--muted);
   max-width: 940px;
   margin: 16px auto;
@@ -374,7 +374,7 @@
   color: var(--accent);
   padding: 5px 10px;
   border-radius: 16px;
-  font-size: 11px;
+  font-size: var(--font-size-control);
   margin-bottom: 8px;
 }
 .agent-failure {
@@ -382,7 +382,7 @@
   border-left: 3px solid var(--red);
   background: var(--surface-raised);
   border-radius: 5px;
-  font-size: 13px;
+  font-size: var(--font-size-description);
 }
 .agent-failure p + p {
   margin-top: 6px;
@@ -392,16 +392,16 @@
   margin-top: 16px;
 }
 .agent-verified-results h3 {
-  font-size: 14px;
+  font-size: var(--font-size-subheading);
   margin-bottom: 8px;
 }
 .agent-verified-results p {
-  font-size: 13px;
+  font-size: var(--font-size-description);
   line-height: 1.7;
 }
 .agent-verified-results small,
 .agent-footnote {
-  font-size: 11px;
+  font-size: var(--font-size-metadata);
   color: var(--muted);
 }
 .agent-project-context {
@@ -410,11 +410,11 @@
   padding-top: 12px;
 }
 .agent-project-context h4 {
-  font-size: 13px;
+  font-size: var(--font-size-subheading);
   margin-bottom: 6px;
 }
 .agent-artifacts > h3 {
-  font-size: 16px;
+  font-size: var(--font-size-section);
   margin-bottom: 8px;
 }
 .agent-artifacts .quiet-state {
@@ -455,7 +455,7 @@
   padding-top: 8px;
 }
 .assistant-page .assistant-intro h2 {
-  font-size: 26px;
+  font-size: var(--font-size-feature-title);
 }
 .assistant-page .assistant-ready {
   min-height: 100px;
@@ -468,7 +468,7 @@
   display: block;
 }
 .assistant-draft-context {
-  font-size: 11px;
+  font-size: var(--font-size-metadata);
   color: var(--muted);
   line-height: 1.7;
 }
@@ -495,11 +495,11 @@
     padding-bottom: 10px;
   }
   .assistant-toolbar h1 {
-    font-size: 16px;
+    font-size: var(--font-size-section);
   }
   .assistant-mode-tabs button {
     padding: 6px 8px;
-    font-size: 11px;
+    font-size: var(--font-size-control);
   }
   .agent-chat-header {
     padding: 10px;
@@ -523,11 +523,11 @@
     display: none;
   }
   .agent-task-views button {
-    font-size: 10px;
+    font-size: var(--font-size-control);
     padding: 4px 6px;
   }
   .agent-composer textarea {
-    font-size: 16px;
+    font-size: var(--font-size-input);
   }
 }
 

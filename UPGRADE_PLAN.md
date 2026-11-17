@@ -1,7 +1,45 @@
 # DevFlow 2.0 upgrade
 
-Current scope: M3.1–M3.4, including confirmed future-event GitHub status automation. The latest phase
-checklist at the end supersedes historical “Milestone 3 not started” statements.
+Current implementation: M1, M2 and M3.1–M3.4. Current approved work: **M3.5 —
+operational acceptance and hardening**, step 9 (deployment and operational acceptance runbooks).
+M3.5 is not complete. The current status and checklist below supersede older
+planning statements; dated results remain historical evidence, not fresh passes.
+
+## Current status — M3.5 step 9 (2026-11-18)
+
+The owner created `feat/m3-5-operational-readiness` from `48d7b5c` on clean `main`.
+The initial feature-branch check confirmed a clean working tree and empty index.
+M1 through M3.4 are accepted as implemented; operational acceptance is recorded
+separately. This baseline passed 326 unit tests, schema/client checks, lint, worker
+compilation and webpack build. Full/core type and formatting results, exact commands
+and connection/browser blockers are recorded in the current VERIFICATION.md section.
+All 82 database tests were skipped at connection setup; zero browser tests executed.
+Neither result is a pass. No migration, seed, live worker or live external action ran. The
+repository-wide format check initially failed on four pre-existing files; the owner
+committed the separate formatting-only fix f101e28 after step 1. Step 2 adds worker
+signal persistence/classification (committed 8fbdc3e); step 3 prepares the
+administrator-only summary API (committed fb5d5b0). Step 4 prepares the existing
+GitHub processing panel health display (committed e3f6ecf). The owner reports
+local migration/application schema current, healthy-idle UI with recent heartbeat/
+poll and zero pending/failed/dead-letter deliveries. That owner evidence does not
+replace unexecuted sandbox database/browser cases. Step 5 prepares explicit
+connection revalidation (committed 09a32aa). The owner reports successful repository/
+admin-access revalidation and correct idle/unavailable monitoring with no retargeting
+or automation changes. That manual evidence is not an agent-executed database or
+browser suite. Step 6 is committed as 1373a87. At this handoff the owner reports
+117/117 isolated PostgreSQL tests passing across 10 files and working retention
+reports. Step 7 is committed as df10219. The owner separately reports 6/6
+recovery-file database cases passed. Step 8 is committed as ecee52a. The owner
+now confirms the full isolated PostgreSQL suite 124/124 across 11 files and 476
+unit/HTTP/DOM cases across 49 files, plus static/schema/worker/build checks. Hosted
+CI and Playwright execution remain outstanding. Step 9 provides deployment and
+acceptance runbooks; this is not a live deployment or milestone acceptance claim.
+
+M3.5 reuses the existing queue, workflow executor, task activity and administrator
+panels. Approved scope: lightweight PostgreSQL worker health, scoped operational
+summaries, explicit caller-authorized connection diagnostics, read-only retention
+policy/impact reporting, isolated CI and deployment/acceptance evidence. No Redis,
+new task-changing actions, automatic connection changes or M4 work is included.
 
 ## Audit — 2026-11-13
 
@@ -102,7 +140,8 @@ commands are in `VERIFICATION.md`; these checks are not reclassified as passed.
 
 Implementation and detailed verification are recorded in `UPGRADE_REPORT.md`.
 Milestone 1 source is implemented; its API/browser release gates remain open.
-Milestone 2 is implemented below; Milestones 3–7 remain planned and not started.
+At this historical M1/M2 checkpoint, Milestones 3–7 were still planned. Current
+implementation/status is listed at the top and in the latest M3.5 checklist.
 
 ### Milestone 2 — AI project manager
 
@@ -132,17 +171,31 @@ Milestone 2 is implemented below; Milestones 3–7 remain planned and not starte
 **Milestone 2 implementation is complete with available checks passing.** Live
 provider, database-backed integration/concurrency and browser gates remain open.
 Details: `AI_PROJECT_MANAGER.md`, `UPGRADE_REPORT.md`, `VERIFICATION.md`.
-Milestone 3 has not been started.
+At this historical M2 checkpoint, Milestone 3 had not started. M3.1–M3.4
+are now implemented; M3.5 baseline work is the current approved scope.
 
 ### Milestone 3 — GitHub and durable automation
 
-- [ ] Verify signatures over bounded raw bodies before parsing; unique delivery IDs.
-- [ ] Persist webhook inbox/outbox and jobs with leases, bounded retry/backoff,
-      execution history and loop/causation limits. Add a documented worker command.
-- [ ] Link DEV task references only within linked authorized project repositories.
-- [ ] Issues/PR/CI records, configurable PR-merge rule; tokens stay server-only.
-- [ ] Visual trigger/condition/action builder; enable/disable, logs, safe email setup.
-- [ ] Tests for signature tampering, duplicates, retry, workflow scope and loops.
+The original broad mission is reconciled here with the implemented M3.1–M3.4
+scope. Checked items indicate source implementation, not a claim that all live
+operational gates passed in this environment.
+
+- [x] Bounded raw-body signature verification, repository identity checks and unique
+      delivery receipts.
+- [x] PostgreSQL delivery queue and durable workflow execution stage with lease
+      fencing, bounded retries, idempotent effects, history and a worker command.
+- [x] Project/workspace-scoped DEV references and GitHub object/task evidence.
+- [x] Commit/PR/issue/workflow-run facts; four configurable PR status rules;
+      encrypted server-only connector credentials.
+- [x] Administrator enable/disable, rule revisions, read-only previews and
+      automation outcomes in the existing interface.
+- [x] Signature, replay, concurrency, authorization and rollback regression suites.
+- [ ] M3.5 operational health, explicit diagnostics, read-only retention reporting,
+      CI and recorded database/browser/live acceptance evidence.
+
+A generic trigger/condition/action builder, email actions, additional mutations and
+GitHub App migration are deferred scope. They are not prerequisites silently added
+to the approved M3.5 operational milestone.
 
 ### Milestone 4 — collaborative documentation
 
@@ -277,9 +330,10 @@ No stylesheet/page redesign, migration/dependency, DB reset or Milestone 3.
 The latest user-run verification reports 25/25 PostgreSQL integration tests and all
 four AI desktop/mobile cases passing. Two roadmap E2E assertions were repaired and
 manually accepted by the user; live Groq acceptance remains pending. Earlier counts
-above are historical. Begin only M3.1 under the current authorization.
+above are historical. That checkpoint authorized M3.1 only; the current approved
+M3.5 scope is recorded at the top and in the checklist below.
 
-### M3.1 — repository connections and durable webhook inbox (current scope)
+### M3.1 — repository connections and durable webhook inbox (implemented; historical plan)
 
 - Reuse existing per-user OAuth/encrypted credentials and GitHub repository picker.
 - Require workspace owner/admin AND a fresh GitHub `permissions.admin` check to
@@ -315,10 +369,14 @@ version-bound activation, historical-delivery fencing, fresh authorization/sourc
 checks, optimistic task writes, atomic machine-attributed activity, bounded retries
 and execution monitoring. No email or unrelated workflow actions were added.
 
-### M3.5 — operational acceptance (not started)
+### M3.5 — operational acceptance (in progress; step 2 prepared)
 
-Real GitHub setup/revocation/redelivery acceptance, queue monitoring/retention,
-workflow logs/UI, cross-workspace/security and desktop/mobile E2E release gates.
+Approved: establish baseline evidence, extend PostgreSQL worker-health visibility,
+reuse administrator summaries/history panels, add explicit authorized connection
+revalidation and read-only retention reports, introduce isolated CI, and record
+operational/browser/live acceptance. Health must distinguish idle, unavailable,
+bounded runs and insufficient evidence. Retention never deletes or archives records.
+The owner performs each local commit and confirms it before the next logical step.
 
 M3.1 checklist (update after verification):
 
@@ -332,7 +390,8 @@ and validation, full/core TypeScript, ESLint, changed-file formatting and webpac
 build pass. The isolated DB attempt fails its initial connections: 34 tests skipped
 across three setup failures. Nine new GitHub integration cases are written, not
 executed. Live GitHub setup and browser acceptance remain open; no migration was
-applied to an application database. M3.2–M3.5 have not been started.
+applied to an application database. At that historical M3.1 checkpoint, later
+phases had not started; current implementation/status is summarized above.
 
 ## M3.2 implementation — 2026-11-14
 
@@ -369,7 +428,8 @@ all transport/enrichment cases passed; E targeted 15 tests plus 2 GitHub DOM cas
 passed. A workflow-reference test exposed a missing assignment and was corrected.
 Final whole-suite counts and final build/type/lint results are in VERIFICATION.md.
 No failed check is reclassified as successful. Database/browser restrictions prevent
-closing runtime gates. M3.3/M3.4/M3.5 remain unimplemented.
+closing runtime gates. At that M3.2 checkpoint, M3.3–M3.5 were unimplemented;
+the current status is recorded above.
 
 Final M3.2 available gates: 239 unit/DOM tests in 27 files, Prisma validation/client
 generation, full/core TypeScript, worker compilation, ESLint, changed-file formatting
@@ -425,7 +485,8 @@ results and local navigation steps are in VERIFICATION.md and GITHUB_INTEGRATION
       preview an actual stored PR event. No application migration was applied here.
 
 M3.3 adds no worker hook, execution receipt, automatic action, task mutation,
-GitHub request or runtime dependency. M3.4/M3.5 remain unimplemented.
+GitHub request or runtime dependency. At that historical M3.3 checkpoint,
+M3.4/M3.5 were unimplemented; current status is recorded above.
 
 ### M3.4 — implementation checklist (2026-11-15)
 
@@ -456,4 +517,248 @@ GitHub request or runtime dependency. M3.4/M3.5 remain unimplemented.
       redelivery idempotency and historical PR #1 remaining unexecuted.
 
 M3.4 implementation is present; real-DB, browser and live GitHub acceptance remain
-open. M3.5 and unrelated actions/automation triggers remain out of scope.
+open. M3.5 was outside that M3.4 checkpoint; its separately approved scope
+follows below. Unrelated actions/automation triggers remain excluded.
+
+## M3.5 approved sequence and acceptance gates — 2026-11-15
+
+Step 1 documentation (f1a1a2b) and formatting cleanup (f101e28) were confirmed by
+the owner before step 2 began. Step 2 was confirmed as 8fbdc3e with a clean tree. Step 3 was confirmed as fb5d5b0 with a clean tree. Step 4 was confirmed as e3f6ecf with a clean tree. Step 5 was confirmed as 09a32aa with a clean tree. Step 6 was confirmed as 1373a87 with a clean tree. Step 7 was confirmed as df10219 with a clean tree. Step 8 was confirmed as ecee52a with a clean tree. Step 9 documentation is prepared
+for the owner's local commit; do not close M3.5 before outstanding acceptance.
+
+| Step | Focused commit                                                    | State                                                   |
+| ---- | ----------------------------------------------------------------- | ------------------------------------------------------- |
+| 1    | docs: reconcile milestone status and operational acceptance gates | Committed: f1a1a2b                                      |
+| 2    | feat(ops): persist scoped worker health signals                   | Committed: 8fbdc3e; covered by owner Step 6 DB run      |
+| 3    | feat(github): expose authorized operational health summaries      | Committed: fb5d5b0                                      |
+| 4    | feat(github): display operational health in existing panels       | Committed: e3f6ecf; owner reports local healthy-idle UI |
+| 5    | feat(github): add explicit connection revalidation diagnostics    | Committed: 09a32aa; owner reports live read acceptance  |
+| 6    | feat(ops): add read-only retention impact reports                 | Committed: 1373a87; owner DB 117/117, browser pending   |
+| 7    | test: cover operational failure and recovery journeys             | Committed: df10219; owner recovery file 6/6             |
+| 8    | chore: add isolated CI verification                               | Committed: ecee52a; owner SQL 124/124, hosted pending   |
+| 9    | docs: publish M3.5 deployment and acceptance runbooks             | Prepared; owner commit and release acceptance pending   |
+
+Relevant tests accompany each functional step; discovered defects get their own
+focused fix commits rather than being hidden in unrelated changes. No reset,
+amend, rebase, push or merge is authorized. Only the owner stages/commits locally.
+
+- [x] Confirm correct feature branch, clean starting tree and baseline commit.
+- [x] Run available baseline checks and record blocked DB/browser tests accurately.
+- [x] Reconcile current scope versus historical records and deferred feature scope.
+- [x] Owner confirmed step 1 commit f1a1a2b before further implementation.
+- [x] Resolve the four recorded baseline formatting violations in a separate
+      `chore: normalize baseline source formatting` change (f101e28); checks rerun.
+- [x] Implement worker signal persistence/classification without misleading idle/bounded/unknown alerts (step 2 source; PostgreSQL acceptance pending).
+- [x] Add administrator-only operational summary reads (step 3 source; PostgreSQL verification blocked).
+- [x] Add explicit authorized connection diagnostics without silently mutating connections (step 5 source; real database/browser/live verification pending).
+- [x] Add proposed read-only retention/dependency impact reporting (step 6 source; PostgreSQL/browser gates unexecuted).
+- [x] Add isolated CI and operational failure/recovery coverage; preserve replay,
+      idempotency, authorization, task-version and lease-fencing guarantees.
+- [x] Owner confirms full isolated PostgreSQL 124/124 (Step 8).
+- [ ] Obtain desktop/mobile browser and GitHub-hosted CI execution evidence.
+- [ ] Obtain separately authorized owner-run live evidence for new-event execution,
+      redelivery, restart and connection lifecycle behavior in disposable test scope.
+- [ ] Record deployment/runbook evidence and remaining limits before closing M3.5.
+
+M3.5 cannot be marked complete while required live acceptance gates are unperformed.
+DEV-002, live rules/connections and production records remain untouched. Existing
+M3.4 live instructions are an owner-run procedure, not permission for the agent to
+create webhooks, enable a rule, revoke credentials or merge a real PR.
+
+### Step 2 evidence — durable worker health
+
+The owner confirmed f101e28 and the feature branch/tree was clean before this
+change. Prepared commit: `feat(ops): persist scoped worker health signals`.
+New additive migration 202611150003_github_worker_health creates only operational
+signal storage/enums; no existing rows are rewritten. Signals are scoped to a run
+and repository connection, with composite project/workspace foreign keys. Heartbeat,
+queue polling, attempt progress and bounded/continuous lifecycle are distinct.
+No API or UI is added until steps 3–4. Classifier results are evidence summaries,
+not deployment alerts or proof of successful task execution.
+
+Full/core TypeScript, worker compilation, Prisma validation/generation and a
+schema-to-schema migration diff are verified without database writes. The new
+PostgreSQL cases require owner-local execution: a guarded devflow_test connection
+probe failed at localhost:5433; no migration or test database writes were attempted.
+See VERIFICATION.md for final unit/build/format results and safe local commands.
+The migration has not been applied to either database here.
+
+**Stop for owner commit confirmation before step 3.** M3.5 live acceptance remains
+open; no live worker, rule, repository connection or DEV-002 was changed.
+
+### Step 3 — authorized operational health summaries (2026-11-17)
+
+Verified 8fbdc3e on the correct feature branch with a clean starting tree. The
+owner reported restored Fedora infrastructure but supplied `[INSERT RESULTS]`
+rather than integration counts; no PostgreSQL pass is inferred from that placeholder.
+
+Prepared endpoint: GET /api/github/repositories/:connectionId/health?workspaceId=...
+uses the existing authenticated actor and administrator authorization, derives
+project scope from the authorized connection, and reads in a RepeatableRead
+transaction with a database-clock as-of timestamp. Worker evidence reuses the step
+2 classifier; representative query buckets avoid hiding a healthy replica behind
+many recent stalled ones. Counts distinguish ready scheduling, future backoff,
+expired leases, terminal delivery/workflow outcomes and historical disconnected
+or archived scopes. Only explicit aggregates/timestamps and static diagnostics
+are returned; no run IDs, job payloads, credential fields or free-form errors.
+GET success and failure responses use no-store; there is no mutation endpoint.
+No schema migration, worker or external request is needed by this step.
+
+Source/unit/route regression tests and new isolated PostgreSQL cases are added.
+The guarded localhost:5433/devflow_test connection probe remains blocked in the
+sandbox; new database tests are not executed. See VERIFICATION.md for exact final
+checks and local commands. Existing Next.js development output is preserved by
+building a credential-free source snapshot under /tmp. No UI work is started.
+**Wait for owner commit confirmation before step 4.**
+
+### Step 4 — existing GitHub administrator panel health (2026-11-17)
+
+Verified fb5d5b0 on the approved branch and a clean starting tree. Prepared commit:
+`feat(github): display operational health in existing panels`. The GitHub event
+processing panel now includes a compact read-only health section using the Step 3
+endpoint. Worker evidence, delivery queue/backoff/failures and automation outcomes
+have distinct labels. Timestamp/guidance disclosures are collapsed by default.
+Loading, missing connection, empty work, authorization denial, generic transport
+errors, stale snapshots and device-clock differences have explicit states.
+
+Queries are keyed by workspace/project/connection and validate returned scope;
+only administrator views mount them. Cached health is hidden until authorization
+is revalidated after mounting, removed immediately on role loss, and hidden on
+401/403/404. Automatic polling stops for access denials. Errors and guidance never
+render arbitrary server messages. No new mutation control or backend change is
+introduced; existing explicit retry/enrichment controls remain unchanged.
+
+Unit/DOM/authorization regressions pass; browser screenshot/overflow and actual
+PostgreSQL acceptance remain unexecuted in the sandbox. No screenshot is claimed.
+See VERIFICATION.md for final checks and safe local commands. No live data, rules,
+connections, worker or DEV-002 was modified. **Wait for the owner commit before
+step 5.** M3.5 cannot close until its remaining actual acceptance gates pass.
+
+### Step 5 — explicit connection revalidation (2026-11-17)
+
+Verified e3f6ecf and a clean feature branch. POST
+/api/github/repositories/:connectionId/revalidate?workspaceId=... requires an
+explicit same-origin administrator request with empty JSON body. It checks only
+the configured authorizer's own credentials, or the requesting administrator's
+account when enrichment is unset; it never borrows another member's token.
+Up to two bounded GitHub GETs verify account login and stored repository ID/name,
+active state and explicit admin permission. Missing permission evidence is
+inconclusive; 401 cannot distinguish expired/revoked/invalid credentials. No
+identity, setting, credential, webhook, task or rule is changed by this diagnostic.
+
+Authorization/context is checked before/between external reads and at completion;
+changed credentials/grants, role loss, disconnect and archive prevent a valid result.
+Only existing operational RateLimit metadata is written for per-admin request
+budgets and observed cooldowns, never provider resources. External reads happen
+outside database transactions; no automatic retries or offline mutation queue.
+The existing panel displays local sanitized copy, point-in-time evidence/source,
+known retry timing, explicit loading/error/retry controls and no automatic check.
+
+Unit/route/UI coverage and eight isolated PostgreSQL cases accompany this step.
+PostgreSQL, browser and live GitHub checks remain unexecuted in this sandbox;
+417 unit tests pass. Exact static/build results and local commands are in
+VERIFICATION.md. **Wait for owner commit confirmation before step 6.**
+
+### Step 6 — read-only retention impact reports (2026-11-18)
+
+Verified 09a32aa and a clean starting tree. The project-scoped administrator GET
+and existing-panel report compare proposed 7/30/90-day UTC windows. Seven metadata
+categories cover delivery/processing receipts, observations, current objects,
+task associations/evidence, automation executions and worker signals, including
+current and disconnected connections. Exact cutoff/future records are preserved.
+Replay receipts, immutable provenance, associations and execution/idempotency audit
+records never become age-only candidates. Active, failed and unresolved records
+are protected; superseded finished worker signals are the only potential candidates,
+with latest heartbeat/past evidence and last poll/progress anchors retained.
+
+No policy is saved. PostgreSQL transactions explicitly SET TRANSACTION READ ONLY,
+with RepeatableRead, 4-second statement and 15-second transaction bounds. Each
+category caps matched metadata at 10,001 rows; over 10,000 means incomplete with
+unknown totals/ages/candidates, not a sampled count. Payloads and credentials are
+not selected or loaded into Node. Dependencies are aggregate EXISTS checks, not
+record exports. No deletion, archive, cleanup scheduler, external request, schema
+migration or domain mutation is introduced. Endpoint and UI remain admin-only.
+
+441 unit tests pass in 47 files; 11 PostgreSQL cases and the extended browser
+journey remain unexecuted here. Exact static/build/format results and local commands
+are in VERIFICATION.md. Potential candidates are not deletion authorization.
+**Wait for owner commit confirmation before step 7.**
+
+### Step 7 — operational failure/recovery journeys (2026-11-18)
+
+Verified 1373a87 and a clean feature branch. Owner-reported pre-change baseline:
+117/117 PostgreSQL cases across 10 files, retention UI accepted, 441 unit cases,
+Docker PostgreSQL healthy, browser tests pending. This is owner-run evidence for
+Step 6, not execution of the new Step 7 cases in this sandbox.
+
+Added five runtime/telemetry unit journeys, five revalidation timeout/recovery
+cases and three retention timeout/error regressions. Added six cross-layer
+PostgreSQL journeys and one provider-cooldown recovery case using fresh isolated
+fixtures and mocked/rejected external fetch. The existing browser fixture now
+includes unavailable→idle, rejected authorization→explicit success and incomplete/
+failed retention→complete transitions. Runtime and signed-receipt/lease tests
+preserve existing source code; no application, worker, schema, service or API
+behavior change was necessary based on available checks.
+
+454 unit cases pass in 48 files; static/Prisma/build checks pass. Seven new database
+cases and native browser execution remain unexecuted here. Interruption tests
+model abandoned leases/stale evidence; they do not launch/kill an OS service.
+PostgreSQL telemetry is explicitly flushed in controlled test callbacks rather
+than waiting for wall-clock ticks; timer/coalescing behavior is exercised separately
+with fake timers. See GITHUB_INTEGRATION.md coverage index and VERIFICATION.md.
+**Wait for owner commit confirmation before step 8.** M3.5 remains open.
+
+### Step 8 — isolated CI verification (2026-11-18)
+
+Verified df10219 on feat/m3-5-operational-readiness with a clean tree/index.
+The owner confirmed six passing operational-recovery integration tests. The prior
+wording “seven added cases” describes six in that file plus one cooldown case
+appended to github-revalidation.integration.test.ts; it never meant seven in the
+recovery file. Current discovery: 124 cases / 11 files, **not execution**. The
+117/117 baseline predates those seven additions; do not combine separate runs into
+a claimed updated full-suite pass.
+
+- [x] Add ordinary PR and main/conventional feature-branch push verification.
+- [x] Pin actions by commit, Node/pnpm versions and frozen lockfile installation;
+      cache only the downloaded pnpm store with a lockfile/build-policy key.
+- [x] Use ephemeral PostgreSQL 16, loopback-only devflow_test, a deliberately
+      unreachable application sentinel and a fail-closed CI database wrapper.
+- [x] Configure CI stages for schema/client, full/core types, lint, formatting,
+      worker compilation, mocked-provider unit/HTTP/DOM tests, real PostgreSQL
+      integration and webpack; hosted execution remains pending.
+- [x] Test guard rejection, subprocess failures and workflow security/check contract.
+- [ ] Execute GitHub-hosted CI after separately authorized push; record run URL/SHA.
+- [ ] Execute desktop/mobile browser gates; this CI step does not replace them.
+
+No application/schema changes, migration application, database setup/reset/seed,
+live worker, live provider calls or repository writes occurred in this step. See
+VERIFICATION.md for exact results and CI troubleshooting. **Wait for owner commit
+confirmation before step 9.** M3.5 remains open until required acceptance evidence.
+
+### Step 9 — deployment and operational acceptance runbooks (2026-11-18)
+
+Confirmed ecee52a, correct feature branch and clean working tree/index before edits.
+Owner Step 8 evidence: PostgreSQL **124/124 in 11 files**, unit/HTTP/DOM **476 in 49
+files**, full/core types, lint, formatting, schema/client, worker compilation and
+isolated webpack passed. This supersedes the earlier unresolved full SQL gate;
+Step 7's six-file-case result and the 117-case baseline stay historical. Hosted
+CI and Playwright remain unexecuted; no live Groq or deployment acceptance inferred.
+
+Documentation-only: deploy/DEPLOYMENT_RUNBOOK.md covers the actual separate web/
+worker/PostgreSQL architecture, environment/key continuity, ordered eight-migration
+release process, HTTPS ingress, supervision, health states, troubleshooting and
+schema-compatible rollback/recovery. deploy/M3_5_ACCEPTANCE.md records all nine steps,
+actual evidence, outstanding browser/CI/live gates, safe local commands and separately
+approved push/review/merge procedures. README and current milestone guides link to
+these canonical runbooks. Historical instructions do not authorize DEV-002/rule
+changes; use separately approved disposable scope for active live acceptance.
+
+- [x] Prepare deployment, recovery and acceptance documentation without production changes.
+- [x] Reconcile actual migration count, CI/local PostgreSQL versions and SQL evidence.
+- [x] Run documentation formatting/link/implementation-consistency and CI contract checks.
+- [ ] Owner commits Step 9: docs: publish M3.5 deployment and acceptance runbooks.
+- [ ] Record final hosted CI run/SHA, actual Playwright/visual evidence and required
+      live operational acceptance before a release owner closes M3.5.
+
+**Stop for the owner's local commit confirmation.** No push/merge/deployment, DB
+mutation, worker start, live action or further milestone is authorized/performed.

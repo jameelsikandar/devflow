@@ -3,6 +3,9 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, body } from '@/lib/client';
 import { Button } from './ui/button';
+import { GitHubOperationalHealth } from './github-operational-health';
+import { GitHubConnectionRevalidation } from './github-connection-revalidation';
+import { GitHubRetentionReport } from './github-retention-report';
 type Delivery = {
   id: string;
   event: string;
@@ -49,6 +52,7 @@ export function GitHubProcessing({
   scope: (route: string) => string;
   openTask?: (id: string) => void;
 }) {
+  const [revalidationVersion, setRevalidationVersion] = useState(0);
   const [state, setState] = useState('');
   const [offset, setOffset] = useState(0);
   const [activityOffset, setActivityOffset] = useState(0);
@@ -73,7 +77,10 @@ export function GitHubProcessing({
   const change = useMutation({
     mutationFn: ({ route, input }: { route: string; input: unknown }) =>
       api(scope(route), { method: 'POST', body: body(input) }),
-    onSuccess: () => client.invalidateQueries({ queryKey: ['github-processing', workspaceId] }),
+    onSuccess: (_, variables) => {
+      if (variables.route.endsWith('/enrichment')) setRevalidationVersion((value) => value + 1);
+      return client.invalidateQueries({ queryKey: ['github-processing', workspaceId] });
+    },
   });
   return (
     <section
@@ -83,9 +90,23 @@ export function GitHubProcessing({
     >
       <h3>GitHub event processing</h3>
       <p>
-        The separate worker processes this inbox. GitHub links never change task status or
-        assignments.
+        The separate worker processes this inbox. Linking activity does not change tasks; only
+        explicitly enabled, confirmed workflow rules can apply supported status changes.
       </p>
+      <GitHubOperationalHealth
+        workspaceId={workspaceId}
+        projectId={projectId}
+        connectionId={connectionId}
+        admin={admin}
+      />
+      <GitHubConnectionRevalidation
+        key={revalidationVersion}
+        workspaceId={workspaceId}
+        projectId={projectId}
+        connectionId={connectionId}
+        admin={admin}
+      />
+      <GitHubRetentionReport workspaceId={workspaceId} projectId={projectId} admin={admin} />
       {admin && connectionId && (
         <>
           {status.isPending && <p role="status">Loading processing status…</p>}

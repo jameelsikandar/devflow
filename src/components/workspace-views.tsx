@@ -46,7 +46,7 @@ const tooltipStyle = {
   background: 'var(--surface-raised)',
   border: '1px solid var(--border)',
   borderRadius: 10,
-  fontSize: 12,
+  fontSize: 'var(--font-size-description)',
   color: 'var(--text)',
 };
 export function Dashboard({
@@ -400,7 +400,7 @@ function ProductivityChart({ days }: { days: ReturnType<typeof analytics>['days'
         height="100%"
         initialDimension={{ width: 320, height: 189 }}
       >
-        <AreaChart data={days} margin={{ top: 12, right: 12, left: -28, bottom: 0 }}>
+        <AreaChart data={days} margin={{ top: 12, right: 12, left: -12, bottom: 0 }}>
           <defs>
             <linearGradient id="completed-gradient" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="#ad8cef" stopOpacity={0.25} />
@@ -412,14 +412,14 @@ function ProductivityChart({ days }: { days: ReturnType<typeof analytics>['days'
             dataKey="day"
             axisLine={false}
             tickLine={false}
-            tick={{ fill: 'var(--muted)', fontSize: 11 }}
+            tick={{ fill: 'var(--muted)', fontSize: 'var(--font-size-caption)' }}
             dy={10}
           />
           <YAxis
             allowDecimals={false}
             axisLine={false}
             tickLine={false}
-            tick={{ fill: 'var(--muted)', fontSize: 10 }}
+            tick={{ fill: 'var(--muted)', fontSize: 'var(--font-size-caption)' }}
           />
           <Tooltip
             contentStyle={tooltipStyle}
@@ -769,19 +769,19 @@ export function Analytics({ data }: { data: Snapshot }) {
               height="100%"
               initialDimension={{ width: 320, height: 240 }}
             >
-              <BarChart data={metrics.days} margin={{ left: -20, right: 12, top: 10, bottom: 5 }}>
+              <BarChart data={metrics.days} margin={{ left: -8, right: 12, top: 10, bottom: 5 }}>
                 <CartesianGrid stroke="var(--border)" vertical={false} />
                 <XAxis
                   dataKey="day"
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fill: 'var(--muted)', fontSize: 11 }}
+                  tick={{ fill: 'var(--muted)', fontSize: 'var(--font-size-caption)' }}
                 />
                 <YAxis
                   axisLine={false}
                   tickLine={false}
                   allowDecimals={false}
-                  tick={{ fill: 'var(--muted)', fontSize: 11 }}
+                  tick={{ fill: 'var(--muted)', fontSize: 'var(--font-size-caption)' }}
                 />
                 <Tooltip contentStyle={tooltipStyle} />
                 <Bar dataKey="created" fill="#4d596e" radius={[4, 4, 0, 0]} name="Created" />
