@@ -1,0 +1,91 @@
+.github-operational-health {
+  min-width: 0;
+  margin-block: 16px;
+  padding-block: 16px;
+  border-block: 1px solid var(--border);
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+.github-operational-health > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.github-operational-health h4,
+.github-operational-health h5 {
+  margin: 0;
+}
+.github-operational-health p,
+.github-operational-health li {
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--secondary);
+}
+.github-health-worker {
+  margin-top: 12px;
+}
+.github-health-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 5px;
+  background: var(--surface-raised);
+  font-size: 12px;
+}
+.github-health-badge[data-tone='healthy'] {
+  color: var(--green);
+}
+.github-health-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr));
+  gap: 16px;
+  margin-block: 16px;
+}
+.github-health-metrics > section {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.github-health-metrics h5 {
+  font-size: 12px;
+}
+.github-health-metrics dl,
+.github-health-times {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 6px 12px;
+  font-size: 12px;
+}
+.github-health-metrics dt,
+.github-health-times dt {
+  color: var(--secondary);
+}
+.github-health-metrics dd,
+.github-health-times dd {
+  margin: 0;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.github-operational-health details {
+  margin-block: 10px;
+}
+.github-operational-health summary {
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--secondary);
+}
+.github-operational-health summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+  border-radius: 3px;
+}
+.github-operational-health .github-health-stale {
+  padding: 8px 10px;
+  border-left: 2px solid var(--accent);
+}
+.github-operational-health .github-health-note,
+.github-operational-health .github-health-asof {
+  font-size: 11px;
+}

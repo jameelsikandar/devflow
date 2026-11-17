@@ -7,8 +7,8 @@ manager (Milestone 2) are implemented. Milestone 3 includes M3.1 connections,
 M3.2 event processing, M3.3 workflow definitions/dry-run previews, and M3.4
 confirmed future-event status automation. Database/browser/live automation acceptance
 remains open in this sandbox. M3.5 step 2 adds durable worker signals and evidence classification; step 3 now
-prepares administrator-only operational summary APIs. Panels and later operational
-work remain pending. Step 2 migration verification remains unavailable in this sandbox.
+provides administrator-only operational summary APIs. Step 4 prepares their
+display in the existing processing panel; later operational work remains pending. Step 2 migration verification remains unavailable in this sandbox.
 This is **not a claim that the entire DevFlow 2.0 mission is finished**. The checklist
 in `UPGRADE_PLAN.md` records the remaining phases and open release gates.
 
@@ -1112,3 +1112,38 @@ snapshot so the owner's running Next.js dev output is not disturbed.
 
 Prepared commit: `feat(github): expose authorized operational health summaries`.
 Step 4 and M3.5 acceptance remain pending; wait for owner commit confirmation.
+
+## M3.5 step 4 — administrator panel health display (2026-11-17)
+
+Confirmed clean feature branch at fb5d5b0. Added a scoped health component inside
+the existing GitHub event-processing panel with existing buttons/design tokens;
+no separate dashboard or assistant/global layout changes. A client-side contract
+validates the Step 3 response and strips unused fields. Friendly worker labels
+separate idle/active, unavailable, bounded, insufficient, disconnected and archived
+evidence. Delivery queue/scheduling, retry/dead-letter outcomes and workflow counts
+are shown independently, with locale-aware timestamps and compact disclosures.
+The existing misleading claim that GitHub can never change status is corrected:
+linking itself does not mutate tasks; explicitly confirmed workflow rules can.
+
+GET-only polling every 30 seconds respects foreground visibility and stops after
+access denial. Cached data is not treated as authorization: it stays hidden until
+mount-time verification, is scoped by workspace/project/connection and is removed
+from view on role loss or 401/403/404. Mismatched response scope is rejected.
+Snapshot age is updated by timers/focus/request completion; snapshots older than
+90 seconds, refresh failures or device-clock differences cannot appear as current
+healthy evidence. Transport errors are generic; diagnostic copy is allowlisted by
+code rather than rendering arbitrary returned messages or credentials.
+
+Full unit suite: 375 passed in 41 files, including 22 new health UI cases and one
+additional full-page member-visibility regression. Existing explicit retry,
+enrichment and repository connection/disconnect tests remain passing. Browser
+journey added for both Playwright projects, dark/light, 1440/1024/768/390 widths,
+keyboard refresh, sanitized failure and no GitHub writes. Discovery is not browser
+execution; no screenshot/visual or real-DB acceptance is claimed here. Exact
+static/build/format results and local steps are in VERIFICATION.md. Production
+build uses a temporary credential-free source snapshot to preserve dev output.
+
+No backend authorization, schema, worker, automation rule or domain mutation service
+is changed. No live GitHub action or application data mutation is performed.
+Prepared commit: `feat(github): display operational health in existing panels`.
+Stop for owner commit confirmation before step 5; M3.5 remains incomplete.

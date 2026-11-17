@@ -1,6 +1,107 @@
 # DevFlow local verification
 
-## Current change — M3.5 step 3: authorized summaries (2026-11-17)
+## Current change — M3.5 step 4: administrator health panel (2026-11-17)
+
+Confirmed fb5d5b0 on feat/m3-5-operational-readiness and a clean starting tree.
+This step displays the Step 3 API inside the existing GitHub event-processing
+panel. No backend route/service, schema, migration, worker, rule or task mutation
+is changed. Application records, connections and DEV-002 remain untouched.
+
+### Actual checks
+
+| Check                      | Executed command                                                                              | Result                                                                                                                                      |
+| -------------------------- | --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Full TypeScript            | node_modules/.bin/tsc --noEmit --pretty false                                                 | Passed                                                                                                                                      |
+| Core TypeScript            | node_modules/.bin/tsc --noEmit -p tsconfig.core.json --pretty false                           | Passed                                                                                                                                      |
+| Worker compilation         | node_modules/.bin/tsc -p tsconfig.worker.json --pretty false                                  | Passed; no worker started                                                                                                                   |
+| ESLint                     | node_modules/.bin/eslint .                                                                    | Passed after resolving the render-time Date.now purity issue using timer/event/request state updates                                        |
+| Full unit/DOM/route suite  | AI_API_KEY= GITHUB_CLIENT_ID= GITHUB_CLIENT_SECRET= node_modules/.bin/vitest run --pool=forks | **375 passed, 41 files, 0 failed**; 22 new health-interface cases and one full-page member-visibility case                                  |
+| Production build           | next build --webpack using isolated source snapshot described below                           | Passed                                                                                                                                      |
+| Repository format/diff     | node_modules/.bin/prettier --check .; git diff --check                                        | Passed                                                                                                                                      |
+| New browser discovery      | node_modules/.bin/playwright test e2e/github-health.spec.ts --list                            | **2 cases discovered** (chromium/mobile); zero browser tests executed                                                                       |
+| PostgreSQL integration     | Not executed in this UI-only step                                                             | The prior guarded sandbox probe could not reach devflow_test; no new database evidence was supplied. Not retried, passed or marked skipped. |
+| Browser screenshots/layout | Not executed                                                                                  | Visual acceptance remains incomplete. No screenshot, overflow or real keyboard/theme-layout pass is claimed from jsdom/discovery.           |
+
+No repeated socket attempt or conflicting dev server was launched. The browser
+journey requires isolated PostgreSQL for real registration/SSR authentication;
+its GitHub/health responses are mocked UI fixtures. The known sandbox database/
+server restriction was not bypassed. Step 3 owner-local integration results were
+a placeholder, not actual acceptance counts, and remain unrecorded here.
+
+Build copied tracked/new source into /tmp/devflow-m35-health-ui-build-nwuu_kig,
+excluding private .env files and generated output, and symlinked installed
+node_modules. The final component/tests were synced before the final build.
+The build used blank AI/GitHub client credentials, NEXT_TELEMETRY_DISABLED=1,
+APP_URL=http://localhost:3000, and the non-live placeholder DATABASE_URL at
+localhost:1/devflow_build_test. No database or provider connection was required.
+The owner's application .next/dev output and running server were left alone.
+Logs: /tmp/devflow-m35-health-ui-unit-final.log and /tmp/devflow-m35-health-ui-build.log.
+No dependency or lockfile change was made.
+
+### UI regression evidence and remaining gates
+
+Executed DOM cases cover all seven labels (five worker states plus disconnected/
+archived), zero work, missing connection, loading, sanitized errors, generic-error
+stale snapshots, snapshot aging/device clock difference, read-only polling/refresh,
+collapsed guidance, unknown diagnostic/credential fields, malformed responses,
+member hiding, role downgrade and strict response scope. Cached data requires a
+successful scope-verified request on the current mount: a failed initial request
+cannot disclose cached metrics, and a transport failure after access denial cannot
+restore them. Existing retry/enrichment and connection/disconnect cases still pass.
+Light/dark DOM semantics do not establish CSS contrast or pixel/layout correctness.
+
+New Playwright journey checks the existing panel, native keyboard refresh, no
+GitHub writes, generic refresh failure, 1440/1024/768/390 widths and dark/light,
+and captures screenshots only when actually executed. Both configured browser
+projects discover the journey. It is not live GitHub, worker or server authorization
+acceptance, and no screenshots exist from this sandbox step.
+
+### Safe Fedora-local verification
+
+Use the existing distinct devflow_test configuration with Step 2 migration already
+reviewed/applied to that isolated database. No Step 4 migration or seed is needed.
+The guard below only validates configuration and prints a sanitized target.
+
+```bash
+node --import tsx <<'NODE'
+require('dotenv/config');
+const { requireTestDatabase } = require('./tests/database-config.ts');
+const target = requireTestDatabase(process.env.DATABASE_URL, process.env.TEST_DATABASE_URL);
+if (target.pathname !== '/devflow_test') throw Error('Only devflow_test permitted');
+console.log('Verified isolated test target', target.hostname, target.port, target.pathname);
+NODE
+# Continue only after the guard succeeds:
+AI_API_KEY= GITHUB_CLIENT_ID= GITHUB_CLIENT_SECRET= pnpm exec vitest run --pool=forks
+pnpm typecheck
+pnpm typecheck:core
+pnpm lint
+pnpm format:check
+pnpm github:worker:build
+AI_API_KEY= GITHUB_CLIENT_ID= GITHUB_CLIENT_SECRET= pnpm test:integration
+# Stop the local dev server first, or use a separate source copy to isolate .next output.
+# Keep 3100 free. Playwright must start its own isolated server (reuseExistingServer=false).
+AI_API_KEY= GITHUB_CLIENT_ID= GITHUB_CLIENT_SECRET= pnpm test:e2e e2e/github-health.spec.ts --reporter=list,html
+AI_API_KEY= GITHUB_CLIENT_ID= GITHUB_CLIENT_SECRET= pnpm test:e2e --reporter=list,html
+AI_API_KEY= GITHUB_CLIENT_ID= GITHUB_CLIENT_SECRET= pnpm build:webpack
+```
+
+Inspect test-results screenshots from both projects and all requested sizes/themes.
+The browser journey creates only a fresh isolated user/workspace/project, intercepts
+all GitHub routes with read-only fixtures and does not create repository connections,
+merge PRs, enable rules or start workers. Do not run against application data or a
+reused application server. Actual authorization/database behavior remains covered
+by the existing isolated integration suites, not these mocked browser responses.
+
+Manual UI inspection: GitHub navigation → selected project → GitHub event processing
+→ Operational health. Refresh reads only. Check empty/idle, bounded/unknown evidence,
+backlog/failures, stale/error labels and role-based visibility without changing
+existing rules or connections. No live external action is needed or authorized.
+
+Prepared commit: `feat(github): display operational health in existing panels`.
+Wait for the owner's commit confirmation before step 5. M3.5 completion and visual/
+PostgreSQL/live operational acceptance remain open. No Git write/push was attempted.
+
+## Historical change — M3.5 step 3: authorized summaries (2026-11-17)
 
 Verified owner commit 8fbdc3e on feat/m3-5-operational-readiness and a clean tree
 before implementation. The owner's restored-Fedora message includes the literal

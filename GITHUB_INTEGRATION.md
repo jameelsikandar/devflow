@@ -8,15 +8,15 @@ M3.4 now adds explicitly confirmed future-event status automation. Its latest
 section below supersedes earlier preview-only deployment notes. Existing OAuth,
 repository browsing, commit history and open-PR reads are retained.
 
-## Current operational status — M3.5 step 3
+## Current operational status — M3.5 step 4
 
 M3.1–M3.4 source is implemented. M3.5 is approved for operational acceptance and
 hardening. Baseline documentation and formatting cleanup are committed; this
-change adds an administrator-only operational summary API on top of the
-committed worker signals/classifier (details at the end).
+change displays the committed administrator-only summary API inside the existing
+GitHub processing panel (details at the end).
 Existing processing controls, task links, previews and confirmed PR automation retain
-their current behavior. Health panels, explicit connection revalidation, retention
-reporting and CI remain later steps. The baseline ledger is historical; the step 2 section
+their current behavior. Explicit connection revalidation, retention reporting
+and CI remain later steps. Health visual acceptance remains open. The baseline ledger is historical; the step 2 section
 at the end records the current implementation and unverified database gate;
 earlier phase sections remain historical implementation/setup records.
 
@@ -935,3 +935,45 @@ and database regression commands are in VERIFICATION.md; no live GitHub/Groq
 credentials are required. Fedora integration counts were not supplied in the
 request, and the sandbox's guarded devflow_test probe is still unreachable. Do
 not infer database acceptance from unit mocks or an HTTP fixture alone.
+
+## M3.5 step 4 — viewing operational health
+
+Open **GitHub** in application navigation, select the project in the existing
+repository/project controls, and find **Operational health** inside **GitHub event
+processing**. Only workspace owners/admins see this section or request the health
+API. With no selected connection, the section explains how to select one; it does
+not create or reconnect anything. Ordinary members retain the existing authorized
+activity view without administrator summaries.
+
+The section shows the Step 3 snapshot, using friendly labels for healthy idle,
+active, unavailable, bounded run, insufficient evidence, disconnected and archived
+states. Zero recorded work does not mean a worker is unavailable. Cards separate
+ready/scheduled/processing deliveries, expired leases, failures/dead letters and
+workflow outcomes. Scheduled work includes possible retry backoff; counts overlap
+and cannot be summed into a task-change total. Missing timestamps say Not observed.
+Worker timestamps and known operational guidance use keyboard-operable collapsed
+disclosures. Use existing delivery controls/history for individual records;
+automation outcomes remain in the existing project workflow settings history.
+
+**Refresh operational health** performs a GET only; normal polling is 30 seconds
+in the foreground, with no automatic retries beyond later polls. Access denial
+stops automatic polling. No worker start, credential request, retry, rule enablement
+or task change is attached to refresh. The existing explicit retry/enrichment
+controls retain their prior behavior. Server administrator authorization remains
+the enforcement boundary; client hiding alone is not authorization.
+
+Client cache keys include workspace/project/connection, returned scope must match,
+and old scope data is not carried into a new selection. Mounts revalidate before
+showing cached data; role loss or 401/403/404 hides it. Refresh failures retain
+previously authorized data only as **Last observed** with a stale warning. Age over
+90 seconds also marks a snapshot stale; device-clock differences prompt verification.
+Stale summaries lose healthy emphasis. Historical disconnected/archived scope
+never implies a healthy continuous worker. Errors use generic copy and guidance
+uses known code mappings; arbitrary response messages/extra fields are not shown.
+
+Styles reuse DevFlow light/dark variables and responsive content grids; no fixed
+height, nested scroll area or unrelated layout change is added. The new Playwright
+journey is intended to capture both themes at 1440, 1024, 768 and 390 pixels in
+both configured browser projects. Those checks are unexecuted here: DOM/theme
+semantics and builds do not prove visual or responsive acceptance. Run the local
+commands in VERIFICATION.md and inspect screenshots before closing that gate.

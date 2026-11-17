@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, body } from '@/lib/client';
 import { Button } from './ui/button';
+import { GitHubOperationalHealth } from './github-operational-health';
 type Delivery = {
   id: string;
   event: string;
@@ -83,9 +84,15 @@ export function GitHubProcessing({
     >
       <h3>GitHub event processing</h3>
       <p>
-        The separate worker processes this inbox. GitHub links never change task status or
-        assignments.
+        The separate worker processes this inbox. Linking activity does not change tasks; only
+        explicitly enabled, confirmed workflow rules can apply supported status changes.
       </p>
+      <GitHubOperationalHealth
+        workspaceId={workspaceId}
+        projectId={projectId}
+        connectionId={connectionId}
+        admin={admin}
+      />
       {admin && connectionId && (
         <>
           {status.isPending && <p role="status">Loading processing status…</p>}

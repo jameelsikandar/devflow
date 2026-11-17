@@ -4,6 +4,7 @@ import { createRoot } from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { expect, it, vi } from 'vitest';
 import { GitHubProcessing } from '../src/components/github-processing';
+import { healthFixture } from './github-health-fixture';
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 it('shows sanitized queue/activity states and sends retry/enrichment commands only on explicit clicks', async () => {
   const writes: { path: string; input: unknown }[] = [];
@@ -13,6 +14,7 @@ it('shows sanitized queue/activity states and sends retry/enrichment commands on
     'fetch',
     vi.fn(async (url: string, init?: RequestInit) => {
       const path = new URL(url, 'http://localhost').pathname;
+      if (path.endsWith('/health')) return new Response(JSON.stringify(healthFixture()));
       if (init?.method === 'POST') {
         const input = JSON.parse(String(init.body));
         writes.push({ path, input });
@@ -95,6 +97,7 @@ it('shows sanitized queue/activity states and sends retry/enrichment commands on
       await vi.waitFor(() => expect(button('Retry delivery')).toBeDefined());
     });
     expect(writes).toHaveLength(0);
+    expect(el.textContent).toContain('Operational health');
     expect(el.textContent).toContain('LEASE_EXPIRED');
     expect(el.textContent).toContain('incomplete');
     expect(el.textContent).toContain('unresolved: DEV-45');

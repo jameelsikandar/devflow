@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { expect, it, vi } from 'vitest';
 import { GitHub } from '../src/components/integrations';
 import type { Snapshot } from '../src/lib/types';
+import { healthFixture } from './github-health-fixture';
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 it('connects the selected project, reveals setup only in its dialog, then disconnects through the authorized endpoint', async () => {
@@ -19,6 +20,16 @@ it('connects the selected project, reveals setup only in its dialog, then discon
     'fetch',
     vi.fn(async (url: string, init?: RequestInit) => {
       const path = new URL(url, 'http://localhost').pathname;
+      if (path.endsWith('/health'))
+        return new Response(
+          JSON.stringify(
+            healthFixture('HEALTHY_IDLE', {
+              workspaceId: 'workspace',
+              projectId: 'project',
+              connectionId: 'connection',
+            }),
+          ),
+        );
       let json: unknown;
       if (path === '/api/github/repositories' && init?.method === 'POST') {
         writes.push({ path, method: init.method, input: JSON.parse(String(init.body)) });
@@ -111,6 +122,60 @@ it('connects the selected project, reveals setup only in its dialog, then discon
       await vi.waitFor(() => expect(button('Connect project')?.disabled).toBe(false));
     });
     expect(writes[1]).toEqual({ path: '/api/github/repositories/connection', method: 'DELETE' });
+  } finally {
+    await act(async () => root.unmount());
+    client.clear();
+    el.remove();
+    vi.unstubAllGlobals();
+  }
+});
+
+it('keeps operational summaries hidden for ordinary members in the existing GitHub page', async () => {
+  const data = {
+    workspace: { id: 'workspace', role: 'MEMBER' },
+    projects: [{ id: 'project', name: 'Member project', repository: null, archivedAt: null }],
+  } as unknown as Snapshot;
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string) => {
+      const path = new URL(url, 'http://localhost').pathname;
+      if (path.endsWith('/health')) throw new Error('Member must not request administrator health');
+      return new Response(
+        JSON.stringify(
+          path === '/api/github/repositories'
+            ? [{ id: 'connection', repositoryFullName: 'fixture/repo' }]
+            : path.endsWith('/activity')
+              ? { items: [], total: 0, hasMore: false }
+              : { configured: false, connected: false, repositories: [], commits: [], pulls: [] },
+        ),
+      );
+    }),
+  );
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const el = document.createElement('div');
+  document.body.append(el);
+  const root = createRoot(el);
+  try {
+    await act(async () =>
+      root.render(
+        h(
+          QueryClientProvider,
+          { client },
+          h(GitHub, {
+            data,
+            scope: (route) => `${route}?workspaceId=workspace`,
+            refresh: vi.fn(async () => {}),
+          }),
+        ),
+      ),
+    );
+    await act(async () => {
+      await vi.waitFor(() => expect(el.textContent).toContain('No processed GitHub objects yet.'));
+    });
+    expect(el.textContent).not.toContain('Operational health');
+    expect(vi.mocked(fetch).mock.calls.some(([url]) => String(url).includes('/health'))).toBe(
+      false,
+    );
   } finally {
     await act(async () => root.unmount());
     client.clear();
