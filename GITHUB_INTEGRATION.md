@@ -8,19 +8,20 @@ M3.4 now adds explicitly confirmed future-event status automation. Its latest
 section below supersedes earlier preview-only deployment notes. Existing OAuth,
 repository browsing, commit history and open-PR reads are retained.
 
-## Current operational status — M3.5 step 8
+## Current operational status — M3.5 step 9
 
-M3.1–M3.4 source is implemented. M3.5 is approved for operational acceptance and
-hardening. Baseline documentation and formatting cleanup are committed; this
-change adds isolated CI verification for the committed operational features.
-Step 7 recovery journeys are committed as df10219 (coverage index below).
-Existing processing controls, task links, previews and confirmed PR automation retain
-their current behavior. Owner-local PostgreSQL through Step 6 passed 117/117
-in 10 files; the owner separately passed six recovery-file cases. Updated full
-database/browser verification, hosted CI and final runbooks remain open. The owner reports healthy-idle/unavailable monitoring and successful
-live access revalidation; sandbox PostgreSQL/browser verification remains open. The baseline ledger is historical; the step 2 section
-at the end records the current implementation and unverified database gate;
-earlier phase sections remain historical implementation/setup records.
+M3.1–M3.4 source is implemented; M3.5 Steps 1–8 are committed, most recently
+ecee52a. Step 9 deployment/acceptance documentation is prepared. Owner-local full
+PostgreSQL is 124/124 across 11 files and unit/HTTP/DOM is 476 across 49 files;
+static/schema/client/worker/build checks passed. The owner manually verified
+idle/unavailable monitoring, explicit access revalidation and read-only retention.
+Hosted CI and Playwright execution remain outstanding. M3.5 is not complete.
+
+Use [the deployment/recovery runbook](deploy/DEPLOYMENT_RUNBOOK.md) and
+[the current acceptance checklist](deploy/M3_5_ACCEPTANCE.md). The latest
+[verification ledger](VERIFICATION.md) separates current evidence from historical
+blocked sandbox runs. Earlier phase/setup sections below are historical context;
+they do not authorize live rule changes, worker starts or DEV-002 modifications.
 
 ## Architecture decision
 
@@ -1214,3 +1215,25 @@ scope, failure handling, Fedora commands and troubleshooting. Passing local chec
 or workflow parsing is not hosted CI acceptance. Hosted runs, browser gates and
 required live operational acceptance remain pending; no push or live action was
 performed during implementation. Step 9 awaits the owner's Step 8 commit confirmation.
+
+## M3.5 step 9 — deployment and acceptance handoff
+
+The canonical runbooks are deploy/DEPLOYMENT_RUNBOOK.md (operations) and
+deploy/M3_5_ACCEPTANCE.md (all nine steps, evidence and open gates). Reviewed against
+current source/configuration; no application/schema/worker/API changes or new
+migration are needed. Production uses pnpm build:webpack then pnpm start and a
+separately supervised compiled worker; pnpm dev remains a local-development command,
+not the production startup instruction in older phase examples.
+
+Current schema has eight migrations through 202611150003_github_worker_health.
+Preserve the existing encryption key and database history. Revalidation remains an
+explicit administrator-authorized external read; retention is strictly analysis,
+never deletion/archive/scheduling. Restarting a worker can execute already-authorized
+pending automation: it is not a read-only smoke command. No live worker, rule,
+GitHub resource, task or DEV-002 was touched during this documentation change.
+
+Owner-confirmed full SQL is now 124/124, including the six recovery-file cases and
+separate revalidation cooldown regression. Hosted CI/browser and required supervised
+live journeys remain pending. Push requires explicit approval, final-SHA CI evidence
+must be inspected, and merge requires separate review/approval. M3.5 cannot be closed
+merely because Step 9 documentation is committed. Wait for the owner's local commit.

@@ -1,6 +1,80 @@
 # DevFlow local verification
 
-## Current change — M3.5 step 8: isolated CI verification (2026-11-18)
+## Current change — M3.5 step 9: deployment and acceptance runbooks (2026-11-18)
+
+Verified ecee52a on feat/m3-5-operational-readiness and a clean tree/index before
+editing. This step changes documentation only: README, the four milestone guides
+and two new runbooks under deploy/. No production/source/test/config/schema
+changes, migration application, worker start, live deployment or external action.
+
+### Current accepted evidence and remaining gates
+
+The owner now reports **124/124 real PostgreSQL integration tests across 11 files**
+on isolated devflow_test and **476 unit/HTTP/DOM tests across 49 files**. Full/core
+TypeScript, ESLint, formatting, Prisma validation/generation, worker compilation and
+isolated webpack build also passed locally. GitHub Actions workflow was reviewed;
+**GitHub-hosted CI and Playwright execution remain outstanding**. These owner-run
+results are not executions by the documentation step. They supersede the earlier
+full-SQL uncertainty; historical blocked sandbox checks below remain accurate for
+their dates. The Step 7 count is six recovery-file cases plus one separate
+revalidation cooldown case, all included in the owner's current full 124 result.
+
+Owner manual evidence from prior steps: worker UI correctly showed Healthy idle and
+Unavailable; revalidation verified repository/admin access without retargeting or
+automation changes; retention rendered counts, ages and preservation reasons.
+No fresh native browser, process-kill/restart, live revocation, new-PR automation,
+redelivery, backup restore or live Groq evidence is inferred from fixture tests.
+
+### Documentation deliverables
+
+- [Deployment/recovery runbook](deploy/DEPLOYMENT_RUNBOOK.md): actual separate web/
+  worker/PostgreSQL architecture; protected environment/key continuity; artifact and
+  ordered migration release; supervised production startup/drain/recovery; HTTPS,
+  OAuth/raw-body webhooks; scoped smoke inspection; incident/rollback procedures.
+- [M3.5 acceptance checklist](deploy/M3_5_ACCEPTANCE.md): nine-step commit/evidence
+  ledger, isolated local checks/browser procedure, safe future push/CI/review/merge,
+  required separately authorized disposable-scope live journeys and release signoff.
+- Current guides/README reconciled: eight migrations through worker-health, local
+  Compose PostgreSQL18 versus isolated CI PostgreSQL16, and explicit acceptance gaps.
+  Initial-import history and dated verification records remain historical evidence.
+
+### Executed checks for this documentation-only step
+
+| Check                                    | Actual result                                                                                                                                                                              |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Repository baseline                      | Branch feat/m3-5-operational-readiness, HEAD ecee52a, clean index/tree before edits                                                                                                        |
+| CI safety/workflow contract regression   | AI_API_KEY= GITHUB_CLIENT_ID= GITHUB_CLIENT_SECRET= node_modules/.bin/vitest run tests/ci-verification.test.ts --pool=forks: **22/22 passed, 1 file**                                      |
+| Formatting                               | node_modules/.bin/prettier --check .: passed                                                                                                                                               |
+| Diff whitespace                          | git diff --check: passed                                                                                                                                                                   |
+| Markdown relative links                  | Parsed seven changed Markdown files using installed marked: 36 local link/image targets checked, zero missing; no external/network requests or anchor-rendering acceptance                 |
+| Implementation consistency               | Confirmed eight ordered migration.sql files/latest name; documented package scripts; worker service restart/signal/timeout directives; Compose18/CI16 source assumptions; no DB connection |
+| Documentation code blocks                | Five new runbook bash blocks pass file-based bash -n; one embedded JavaScript snippet parses; syntax only, no deployment/test/DB/live commands executed                                    |
+| Broader unit/static/build/SQL            | **Not rerun** for documentation-only changes; latest owner evidence is 476 unit and 124 SQL with static/build passes                                                                       |
+| Hosted CI / Playwright / live operations | **Not executed**; no push, merge, deployment, worker start, GitHub action, rule/task/DEV-002 change or screenshots                                                                         |
+
+CI contract log: /tmp/devflow-m35-runbook-contract.log. Temporary validation output
+is not committed. No dependency, action pin, workflow permission or SQL changed.
+Full unit/build reruns are unnecessary for prose-only edits; the documented future
+commands are not claims that their stages were executed here.
+
+### Handoff and unperformed acceptance
+
+Step 9 is documentation-prepared, not yet committed by the owner. Proposed commit:
+docs: publish M3.5 deployment and acceptance runbooks. Only the owner stages/commits
+locally. No permission workaround, push, merge or history rewrite was attempted.
+Stop for local commit confirmation; no additional milestone is authorized.
+
+After a separately approved push, require the hosted **Isolated verification** job
+on the final reviewed SHA, record its URL/results, and fix failures in focused
+commits without history rewriting. Merge needs separate approval. Run actual
+chromium/mobile Playwright and visual/keyboard/theme acceptance on devflow_test;
+retain reports privately. Operational process recovery and any active GitHub/rule
+journey need separate explicit authorization in disposable scope. Existing DEV-002,
+connections and live rules must remain unchanged by this handoff.
+
+**M3.5 is not complete while required CI/browser/live operational gates are open.**
+
+## Historical change — M3.5 step 8: isolated CI verification (2026-11-18)
 
 Confirmed df10219 on feat/m3-5-operational-readiness with a clean working tree and
 index before edits. No application source/schema/lockfile change, migration

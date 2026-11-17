@@ -1,11 +1,11 @@
 # DevFlow 2.0 upgrade
 
 Current implementation: M1, M2 and M3.1–M3.4. Current approved work: **M3.5 —
-operational acceptance and hardening**, step 8 (isolated CI verification).
+operational acceptance and hardening**, step 9 (deployment and operational acceptance runbooks).
 M3.5 is not complete. The current status and checklist below supersede older
 planning statements; dated results remain historical evidence, not fresh passes.
 
-## Current status — M3.5 step 8 (2026-11-18)
+## Current status — M3.5 step 9 (2026-11-18)
 
 The owner created `feat/m3-5-operational-readiness` from `48d7b5c` on clean `main`.
 The initial feature-branch check confirmed a clean working tree and empty index.
@@ -29,8 +29,11 @@ or automation changes. That manual evidence is not an agent-executed database or
 browser suite. Step 6 is committed as 1373a87. At this handoff the owner reports
 117/117 isolated PostgreSQL tests passing across 10 files and working retention
 reports. Step 7 is committed as df10219. The owner separately reports 6/6
-recovery-file database cases passed; the earlier 117-case run is not a full updated
-suite result. Step 8 adds isolated CI; hosted CI and browser acceptance remain open.
+recovery-file database cases passed. Step 8 is committed as ecee52a. The owner
+now confirms the full isolated PostgreSQL suite 124/124 across 11 files and 476
+unit/HTTP/DOM cases across 49 files, plus static/schema/worker/build checks. Hosted
+CI and Playwright execution remain outstanding. Step 9 provides deployment and
+acceptance runbooks; this is not a live deployment or milestone acceptance claim.
 
 M3.5 reuses the existing queue, workflow executor, task activity and administrator
 panels. Approved scope: lightweight PostgreSQL worker health, scoped operational
@@ -520,8 +523,8 @@ follows below. Unrelated actions/automation triggers remain excluded.
 ## M3.5 approved sequence and acceptance gates — 2026-11-15
 
 Step 1 documentation (f1a1a2b) and formatting cleanup (f101e28) were confirmed by
-the owner before step 2 began. Step 2 was confirmed as 8fbdc3e with a clean tree. Step 3 was confirmed as fb5d5b0 with a clean tree. Step 4 was confirmed as e3f6ecf with a clean tree. Step 5 was confirmed as 09a32aa with a clean tree. Step 6 was confirmed as 1373a87 with a clean tree. Step 7 was confirmed as df10219 with a clean tree. Step 8 is prepared for the
-owner's local commit. **Do not begin step 9 until that commit is confirmed.**
+the owner before step 2 began. Step 2 was confirmed as 8fbdc3e with a clean tree. Step 3 was confirmed as fb5d5b0 with a clean tree. Step 4 was confirmed as e3f6ecf with a clean tree. Step 5 was confirmed as 09a32aa with a clean tree. Step 6 was confirmed as 1373a87 with a clean tree. Step 7 was confirmed as df10219 with a clean tree. Step 8 was confirmed as ecee52a with a clean tree. Step 9 documentation is prepared
+for the owner's local commit; do not close M3.5 before outstanding acceptance.
 
 | Step | Focused commit                                                    | State                                                   |
 | ---- | ----------------------------------------------------------------- | ------------------------------------------------------- |
@@ -532,8 +535,8 @@ owner's local commit. **Do not begin step 9 until that commit is confirmed.**
 | 5    | feat(github): add explicit connection revalidation diagnostics    | Committed: 09a32aa; owner reports live read acceptance  |
 | 6    | feat(ops): add read-only retention impact reports                 | Committed: 1373a87; owner DB 117/117, browser pending   |
 | 7    | test: cover operational failure and recovery journeys             | Committed: df10219; owner recovery file 6/6             |
-| 8    | chore: add isolated CI verification                               | Implemented; hosted execution pending                   |
-| 9    | docs: publish M3.5 deployment and acceptance runbooks             | Pending                                                 |
+| 8    | chore: add isolated CI verification                               | Committed: ecee52a; owner SQL 124/124, hosted pending   |
+| 9    | docs: publish M3.5 deployment and acceptance runbooks             | Prepared; owner commit and release acceptance pending   |
 
 Relevant tests accompany each functional step; discovered defects get their own
 focused fix commits rather than being hidden in unrelated changes. No reset,
@@ -551,7 +554,8 @@ amend, rebase, push or merge is authorized. Only the owner stages/commits locall
 - [x] Add proposed read-only retention/dependency impact reporting (step 6 source; PostgreSQL/browser gates unexecuted).
 - [x] Add isolated CI and operational failure/recovery coverage; preserve replay,
       idempotency, authorization, task-version and lease-fencing guarantees.
-- [ ] Obtain actual passing isolated PostgreSQL and desktop/mobile browser evidence.
+- [x] Owner confirms full isolated PostgreSQL 124/124 (Step 8).
+- [ ] Obtain desktop/mobile browser and GitHub-hosted CI execution evidence.
 - [ ] Obtain separately authorized owner-run live evidence for new-event execution,
       redelivery, restart and connection lifecycle behavior in disposable test scope.
 - [ ] Record deployment/runbook evidence and remaining limits before closing M3.5.
@@ -730,3 +734,31 @@ No application/schema changes, migration application, database setup/reset/seed,
 live worker, live provider calls or repository writes occurred in this step. See
 VERIFICATION.md for exact results and CI troubleshooting. **Wait for owner commit
 confirmation before step 9.** M3.5 remains open until required acceptance evidence.
+
+### Step 9 — deployment and operational acceptance runbooks (2026-11-18)
+
+Confirmed ecee52a, correct feature branch and clean working tree/index before edits.
+Owner Step 8 evidence: PostgreSQL **124/124 in 11 files**, unit/HTTP/DOM **476 in 49
+files**, full/core types, lint, formatting, schema/client, worker compilation and
+isolated webpack passed. This supersedes the earlier unresolved full SQL gate;
+Step 7's six-file-case result and the 117-case baseline stay historical. Hosted
+CI and Playwright remain unexecuted; no live Groq or deployment acceptance inferred.
+
+Documentation-only: deploy/DEPLOYMENT_RUNBOOK.md covers the actual separate web/
+worker/PostgreSQL architecture, environment/key continuity, ordered eight-migration
+release process, HTTPS ingress, supervision, health states, troubleshooting and
+schema-compatible rollback/recovery. deploy/M3_5_ACCEPTANCE.md records all nine steps,
+actual evidence, outstanding browser/CI/live gates, safe local commands and separately
+approved push/review/merge procedures. README and current milestone guides link to
+these canonical runbooks. Historical instructions do not authorize DEV-002/rule
+changes; use separately approved disposable scope for active live acceptance.
+
+- [x] Prepare deployment, recovery and acceptance documentation without production changes.
+- [x] Reconcile actual migration count, CI/local PostgreSQL versions and SQL evidence.
+- [x] Run documentation formatting/link/implementation-consistency and CI contract checks.
+- [ ] Owner commits Step 9: docs: publish M3.5 deployment and acceptance runbooks.
+- [ ] Record final hosted CI run/SHA, actual Playwright/visual evidence and required
+      live operational acceptance before a release owner closes M3.5.
+
+**Stop for the owner's local commit confirmation.** No push/merge/deployment, DB
+mutation, worker start, live action or further milestone is authorized/performed.

@@ -4,9 +4,10 @@ A developer collaboration workspace with project planning, task management, an
 approval-based AI project manager, and secure GitHub activity and workflow automation.
 Built with Next.js, React, TypeScript, Prisma and PostgreSQL.
 
-**Current implementation: foundation through M3.4.** Implementation status and
-verification status are tracked separately: database, browser and live-provider
-acceptance must be confirmed in your environment. See [VERIFICATION.md](VERIFICATION.md)
+**Current implementation: foundation through M3.4, plus M3.5 operational
+hardening through Step 8; Step 9 runbooks are prepared.** M3.5 acceptance is open:
+owner-local SQL is 124/124 and unit/HTTP/DOM is 476; hosted CI and browser execution
+remain outstanding. Implementation and operational acceptance are tracked separately. See [VERIFICATION.md](VERIFICATION.md)
 for the latest actual results, and [CHANGELOG.md](CHANGELOG.md) for milestone history.
 
 ## Features
@@ -29,6 +30,10 @@ for the latest actual results, and [CHANGELOG.md](CHANGELOG.md) for milestone hi
   transactional status/activity writes, bounded retries, stale-version protection,
   event idempotency and safeguards against historical-event execution.
 
+M3.5 adds scoped worker health, administrator diagnostics, explicit connection
+revalidation, strictly read-only retention impact reports, failure/recovery tests,
+isolated CI and deployment/acceptance runbooks. Operational acceptance remains open.
+
 AI proposals cannot approve themselves. GitHub automation is a separate, explicitly
 confirmed administrator grant for supported PR rules; rules are disabled by default.
 Enabling a rule does not enqueue historical observations. Do not enable live rules
@@ -50,7 +55,7 @@ or start a worker against a live database merely to run verification.
 src/app/             Next.js pages and authenticated API routes
 src/components/      Existing workspace UI, AI chat, roadmap and GitHub settings
 src/lib/server/      Authorization, domain services, providers and GitHub worker logic
-prisma/              Schema, seven additive migrations and optional local seed
+prisma/              Schema, eight ordered migrations and optional local seed
 scripts/             Worker, isolated test-database preparation and maintenance
 tests/              Unit, DOM, SQL and database integration tests
 e2e/                Desktop/mobile Playwright journeys
@@ -59,11 +64,12 @@ deploy/             Example GitHub worker systemd unit
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for architecture and authorization conventions.
 Some early architecture notes predate GitHub automation; the latest
-[GITHUB_INTEGRATION.md](GITHUB_INTEGRATION.md) sections describe M3.1–M3.4.
+[GITHUB_INTEGRATION.md](GITHUB_INTEGRATION.md) sections describe GitHub behavior through M3.5.
 
 ## Local installation
 
-Requires **Node.js >=22.12**, **pnpm 11.9**, and PostgreSQL. The optional Compose
+Use tested **Node.js 22.23.1**, pinned **pnpm 11.9.0**, and PostgreSQL
+(package.json declares Node >=22.12). The optional Compose
 configuration uses PostgreSQL 18 and binds its port only to localhost.
 
 ```bash
@@ -107,7 +113,7 @@ of normal installation, upgrades or verification against existing data.
 
 For existing installations, back up the database outside this repository and apply
 migrations deliberately. Do not use Prisma reset, destructive schema push, reseed,
-or application data changes to resolve test failures. All seven migration files
+or application data changes to resolve test failures. All eight migration files
 remain source-controlled; generated clients and database files do not.
 
 ## Environment configuration
@@ -217,16 +223,17 @@ Follow [VERIFICATION.md](VERIFICATION.md) for actual results and remaining gates
 
 ## Milestones and development history
 
-| Milestone                                     | Implementation status                              |
-| --------------------------------------------- | -------------------------------------------------- |
-| Foundation                                    | Implemented                                        |
-| M1 — Roadmap and Gantt                        | Implemented                                        |
-| M2 — AI project manager                       | Implemented                                        |
-| M3.1 — GitHub connections and signed webhooks | Implemented                                        |
-| M3.2 — Worker, observations and task linking  | Implemented                                        |
-| M3.3 — Workflow definitions and previews      | Implemented                                        |
-| M3.4 — Safe GitHub status automation          | Implemented; runtime acceptance tracked separately |
-| M3.5 and later                                | Not part of this baseline                          |
+| Milestone                                     | Implementation status                                      |
+| --------------------------------------------- | ---------------------------------------------------------- |
+| Foundation                                    | Implemented                                                |
+| M1 — Roadmap and Gantt                        | Implemented                                                |
+| M2 — AI project manager                       | Implemented                                                |
+| M3.1 — GitHub connections and signed webhooks | Implemented                                                |
+| M3.2 — Worker, observations and task linking  | Implemented                                                |
+| M3.3 — Workflow definitions and previews      | Implemented                                                |
+| M3.4 — Safe GitHub status automation          | Implemented; runtime acceptance tracked separately         |
+| M3.5 — Operational readiness                  | Steps 1–8 committed; Step 9 docs prepared; acceptance open |
+| Later milestones                              | Not implemented by this operational work                   |
 
 The local repository was initialized on `main` after development through M3.4.
 No complete earlier application snapshots were recovered. The approved initial
@@ -246,6 +253,8 @@ approved commits have actually been created.
 
 ## Documentation and limitations
 
+- [Deployment and recovery runbook](deploy/DEPLOYMENT_RUNBOOK.md)
+- [M3.5 acceptance checklist and evidence](deploy/M3_5_ACCEPTANCE.md)
 - [Architecture](ARCHITECTURE.md)
 - [Upgrade plan](UPGRADE_PLAN.md) and [implementation report](UPGRADE_REPORT.md)
 - [Verification results and local commands](VERIFICATION.md)

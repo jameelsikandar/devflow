@@ -12,8 +12,9 @@ display in the existing processing panel (committed e3f6ecf). Step 5 adds explic
 connection diagnostics (committed 09a32aa). Step 6 adds read-only retention reports;
 Step 7 recovery regressions are committed as df10219, with owner-reported 6/6
 recovery-file PostgreSQL passes. The earlier 117/117 full database baseline is
-separate. Step 8 adds isolated CI; hosted CI, updated full database and browser
-verification remain open.
+separate. Step 8 is committed as ecee52a; the owner confirms full PostgreSQL 124/124 and
+476 unit/HTTP/DOM cases. Step 9 runbooks are prepared; hosted CI, browser and
+required live operational acceptance remain open.
 This is **not a claim that the entire DevFlow 2.0 mission is finished**. The checklist
 in `UPGRADE_PLAN.md` records the remaining phases and open release gates.
 
@@ -1316,3 +1317,39 @@ the earlier 117/117 full suite is an independent pre-addition baseline. No seven
 case is missing from recovery discovery and no updated full-suite pass is inferred.
 Prepared commit: chore: add isolated CI verification. Wait for owner confirmation
 before Step 9. M3.5 is not complete.
+
+## M3.5 step 9 — deployment and acceptance runbooks (2026-11-18)
+
+Documentation-only change on clean feat/m3-5-operational-readiness at ecee52a.
+Reviewed actual environment parsing, OAuth/session/raw-HMAC boundaries, normalized
+webhook queue, fenced worker/runtime/health classification, automation safeguards,
+retention/revalidation, systemd example, CI and Playwright configs, eight committed
+migrations and package build/start scripts. No concrete production-code safety
+change was needed for this documentation scope.
+
+New deploy/DEPLOYMENT_RUNBOOK.md provides release prerequisites, protected environment
+inventory/key continuity, backup/target review, immutable web/worker artifacts,
+explicit migration/start order, supervised graceful drain/restart/fenced recovery,
+HTTPS/OAuth/webhook routing, non-mutating smoke inspection and incident/rollback
+procedures. No reset/reseed, automatic reconnect, historical replay or cleanup is
+prescribed. CI PostgreSQL16 and local Compose18 are distinguished; deployment-version
+compatibility/restore rehearsal requires its own evidence.
+
+New deploy/M3_5_ACCEPTANCE.md inventories all nine steps/commit evidence and separates
+owner-local automated results, manual observations, fixtures and outstanding live
+acceptance. It includes devflow_test browser commands, explicit approval before a
+feature-branch push or PR/merge, hosted-job inspection and focused fix/recheck steps.
+No live external action, worker/DB operation, rule edit or DEV-002 change occurred.
+README now reflects eight migrations/current M3.5 state without rewriting the honest
+historical initial-import description.
+
+Latest owner evidence is **124/124 PostgreSQL in 11 files and 476 unit/HTTP/DOM in
+49 files**, plus types/lint/format/schema/client/worker/build passes. These are not
+fresh sandbox runs. Step 9 runs document formatting, relative-link, implementation
+consistency and CI contract checks; exact outcomes in VERIFICATION.md. SQL/browser/
+production builds were not rerun for documentation-only edits. Hosted CI, native
+browser/visual checks, supervised deployment/recovery and required approved live
+journeys remain open. M3.5 is not complete.
+
+Prepared focused commit: docs: publish M3.5 deployment and acceptance runbooks.
+Wait for owner's local commit confirmation; no push, merge or history rewrite.
