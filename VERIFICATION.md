@@ -1,10 +1,12 @@
 # DevFlow local verification
 
-## Current change — global typography and readability
+## Current evidence — typography browser verification
 
 Branch style/global-typography-readability was verified clean at b92712e before
 edits. This branch is based on the committed M3.5 runbooks; no M3.5 commit was
-rewritten. See [TYPOGRAPHY.md](TYPOGRAPHY.md) for the before/after scale, semantic
+rewritten. Implementation is now committed as 3855411. This documentation-only
+follow-up began on that commit with a clean working tree; no application/test/DB/
+workflow changes or new application verification runs. See [TYPOGRAPHY.md](TYPOGRAPHY.md) for the before/after scale, semantic
 color/layout decisions and exact Fedora/browser acceptance procedure.
 
 Presentation only: eight stylesheets, Recharts presentation and Kanban label style;
@@ -16,7 +18,7 @@ font family/root preference stays unchanged and mobile inputs use 16px. Palette
 contrast checks cover 84 semantic foreground/surface pairs plus button states;
 passing palette math is not full rendered WCAG/visual acceptance.
 
-| Check                  | Actual result                                                                                                                                                               |
+| Check                  | Earlier Codex sandbox implementation result                                                                                                                                 |
 | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Full unit/HTTP/DOM     | AI_API_KEY= GITHUB_CLIENT_ID= GITHUB_CLIENT_SECRET= node_modules/.bin/vitest run --pool=forks: **485 passed / 50 files**, including nine new typography cases               |
 | Full/core TypeScript   | node_modules/.bin/tsc --noEmit --pretty false; node_modules/.bin/tsc --noEmit -p tsconfig.core.json --pretty false: passed                                                  |
@@ -35,12 +37,54 @@ DB/AI endpoints. Application .next was not overwritten. Logs: /tmp/devflow-typog
 used only an explicit devflow_test URL and no live credentials; server could not
 bind/start, so no fixture or application SQL was performed. No live provider requests.
 
-Unexecuted browser additions check computed fonts, long-view responsive overflow,
-roadmap fixed geometry and text-resize keyboard access. Text resizing is not native
-browser zoom. Required actual inspection: dark/light at 1440, 1024, 768 and 390px,
-plus native zoom/reflow and existing drag/dialog/AI interactions. These remain open;
-no visual claim follows from CSS parsing or compilation. Follow TYPOGRAPHY.md.
-Stop after review handoff; commit only in the owner's Fedora terminal after review.
+### Subsequent owner-run Fedora evidence
+
+At typography commit **3855411**, the owner reports:
+
+- **Playwright: 12/12 passed in 3.1 minutes**, desktop Chromium and mobile Chromium.
+- **Manual inspection completed at normal browser zoom**, with substantially
+  improved overall application readability.
+- Earlier Codex implementation checks remained the supplied baseline: **485 unit/UI
+  tests in 50 files**, full/core types, ESLint, formatting and isolated webpack passed.
+- PostgreSQL integration was **not rerun** for the typography-only change.
+
+The Fedora execution succeeded independently of the earlier sandbox web-server
+EPERM failure. These are owner-reported host results, not a successful sandbox
+rerun, fresh unit/build run or independent review of browser artifacts by Codex.
+No exact test invocation, per-test report or screenshots were supplied. The aggregate
+12/12 and visual feedback do not establish every width/theme, keyboard interaction,
+added assertion or browser zoom level individually.
+
+### Hosted CI evidence is commit-specific
+
+| Commit / scope                      | Owner-reported hosted CI status                                 |
+| ----------------------------------- | --------------------------------------------------------------- |
+| b92712e — prior M3.5 base           | Previously successful hosted CI run; separate baseline evidence |
+| 3855411 — typography implementation | **Not run on GitHub-hosted CI**                                 |
+| Current documentation follow-up     | Not committed or run on hosted CI                               |
+
+The earlier M3.5 historical sections retain their at-the-time pending/blocked
+statuses. The owner-reported successful run at b92712e supersedes that base-commit
+CI uncertainty only; it does not verify typography changes. No run URL or extra CI
+counts are invented. No push, merge or external action occurred during this update.
+
+### Outstanding detailed acceptance
+
+Browser assertions in source address computed fonts, responsive overflow, roadmap
+geometry and text-resize keyboard access; the supplied run does not enumerate which
+of them executed. Record per-case evidence before claiming the entire matrix:
+dark/light at 1440, 1024, 768 and 390px; long content/dialog overflow; keyboard/focus
+and drag interactions; and native zoom/reflow (125%, 150%, 200%). Root text resizing
+is not native browser zoom. Normal-zoom readability feedback is accepted as reported,
+without implying a comprehensive accessibility audit or full WCAG conformance.
+See TYPOGRAPHY.md for the remaining procedure. Prior M3.5 SQL evidence stays 124/124,
+not a result from this typography change.
+
+Only TYPOGRAPHY.md and VERIFICATION.md change in this follow-up. Documentation
+formatting, relative file links and diff whitespace are checked; application tests,
+build, SQL and browsers are not rerun for prose-only evidence reconciliation.
+Proposed separate commit: docs: record typography browser verification.
+Stop for owner review before committing; do not amend 3855411 or rewrite history.
 
 ## Historical change — M3.5 step 9: deployment and acceptance runbooks (2026-11-18)
 

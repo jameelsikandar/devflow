@@ -1,9 +1,10 @@
 # DevFlow typography and readability
 
-Implemented on style/global-typography-readability, based on b92712e. This is a
+Committed as 3855411 on style/global-typography-readability, based on b92712e. This is a
 focused presentation change; M3.5 commits/history and operational acceptance gates
 are retained. No backend, schema, authentication, task data or automation changed.
-Browser/visual acceptance remains incomplete; see the verification section below.
+Fedora-host browser tests and normal-zoom visual inspection passed as reported
+by the owner; detailed visual/accessibility checks remain open below.
 
 ## Audit and semantic scale
 
@@ -79,11 +80,14 @@ are accompanied by names/tooltips; artwork is not a task-information surface.
 
 Palette calculations are not a claim of full WCAG conformance. Actual rendered
 contrast on gradients, focus treatment, zoom, user content and layout must still be
-inspected. No screenshots or complete visual acceptance are claimed here.
+inspected in detail. The owner reports positive normal-zoom visual inspection;
+no screenshots were supplied and complete visual/accessibility acceptance is not claimed.
 
 ## Verification and local browser acceptance
 
-Executed in this change:
+### Codex sandbox implementation evidence
+
+These are the earlier implementation checks, not reruns by this documentation update:
 
 - Full unit/HTTP/DOM suite: **485 passed in 50 files**, including nine new typography,
   palette and real Kanban-rendering regressions.
@@ -98,14 +102,44 @@ Executed in this change:
 - PostgreSQL integration was not rerun: no backend/schema change. Prior owner SQL
   evidence remains 124/124 on devflow_test, not a new result of this UI branch.
 
+### Subsequent Fedora-host verification — owner-reported
+
+For the committed typography implementation **3855411**, the owner independently
+reports **12/12 Playwright browser tests passed in 3.1 minutes**, covering desktop
+Chromium and mobile Chromium. Manual visual inspection was completed at normal
+browser zoom; the owner found the overall application typography substantially
+more readable. This successful host execution resolves the earlier environment
+blocker for that run; it does not turn the sandbox EPERM attempt into a pass.
+
+No exact invocation, per-test report, screenshot set or width/theme/keyboard/zoom
+matrix was supplied. Do not infer that every responsive width, both themes, each
+keyboard interaction, every added assertion or non-default browser zoom level was
+individually verified from the aggregate 12/12 result or positive visual feedback.
+Detailed responsive/accessibility/zoom checks below remain unconfirmed.
+
+PostgreSQL integration was **not rerun** for this typography-only change; the prior
+124/124 devflow_test result is separate historical M3.5 evidence.
+
+### GitHub-hosted CI scope
+
+The owner identifies a previously successful **M3.5 hosted CI run at b92712e**.
+That is evidence for the earlier base commit, not for typography commit 3855411.
+**Hosted CI has not run for 3855411** or this documentation follow-up. No run URL
+or additional hosted test totals are asserted here. No push or merge is authorized
+or performed by this update.
+
+### Detailed acceptance still to record
+
 The new typography tests parse actual styles and independently calculate palette
 contrast. They protect semantic roles, scaling units and roadmap geometry; they are
 not layout-engine tests. The existing browser journeys now check computed sizes,
 roadmap row geometry, both themes at 1440/1024/768/390px, and keyboard focus with
 200% root text resizing. **Root text resizing is distinct from native browser zoom.**
-These added browser assertions remain unexecuted and must be verified locally.
+The reported 12/12 run does not identify individual assertions or their matrix
+results. Retain per-case evidence before closing each detailed acceptance check.
 
-In the Fedora terminal, from this branch with the isolated database already migrated:
+For future reproduction and outstanding detailed checks, use the Fedora terminal
+from this branch with the isolated database already migrated:
 
 ```bash
 node --import tsx <<'NODE'
@@ -141,5 +175,7 @@ zoom substitute. Store screenshots/reports under ignored test-results/, never
 commit authenticated screenshots or tokens. Record actual failures rather than
 marking browser/visual acceptance complete from unit, discovery or build results.
 
-The focused commit is style: improve global typography and readability. No commit,
-push, merge or history rewrite was performed; the owner reviews and commits locally.
+The implementation commit is 3855411 (style: improve global typography and
+readability). This documentation-only follow-up is prepared separately as
+docs: record typography browser verification. It does not amend the implementation
+commit. The owner reviews and commits locally; no push, merge or history rewrite.
