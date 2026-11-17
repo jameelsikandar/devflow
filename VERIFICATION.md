@@ -1,6 +1,117 @@
 # DevFlow local verification
 
-## Current change — M3.5 step 4: administrator health panel (2026-11-17)
+## Current change — M3.5 step 5: explicit connection revalidation (2026-11-17)
+
+Verified e3f6ecf on feat/m3-5-operational-readiness and a clean starting tree. Owner
+manual evidence: application worker-health migration applied, schema current,
+healthy-idle UI with recent heartbeat/completed poll and zero pending/failed/dead
+letters. This is not an agent-executed integration suite or live revalidation.
+
+### Actual checks
+
+| Check                         | Executed command                                                                              | Result                                                                                                                                                                                          |
+| ----------------------------- | --------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Full TypeScript               | node_modules/.bin/tsc --noEmit --pretty false                                                 | Passed                                                                                                                                                                                          |
+| Core TypeScript               | node_modules/.bin/tsc --noEmit -p tsconfig.core.json --pretty false                           | Passed                                                                                                                                                                                          |
+| Worker compilation            | node_modules/.bin/tsc -p tsconfig.worker.json --pretty false                                  | Passed; worker not started                                                                                                                                                                      |
+| ESLint                        | node_modules/.bin/eslint .                                                                    | Passed                                                                                                                                                                                          |
+| Full unit/route/DOM suite     | AI_API_KEY= GITHUB_CLIENT_ID= GITHUB_CLIENT_SECRET= node_modules/.bin/vitest run --pool=forks | **417 passed, 44 files, 0 failed**; 24 service, 3 HTTP and 15 UI cases added                                                                                                                    |
+| Webpack build                 | next build --webpack in isolated source copy below                                            | Passed                                                                                                                                                                                          |
+| Repository formatting/diff    | node_modules/.bin/prettier --check .; git diff --check                                        | Passed                                                                                                                                                                                          |
+| Browser discovery             | node_modules/.bin/playwright test e2e/github-health.spec.ts --list                            | **2 cases discovered**; zero executed. Existing journey now includes a mocked explicit diagnostic action.                                                                                       |
+| PostgreSQL integration        | Not executed here                                                                             | Eight new isolated database cases written; no pass/skip count claimed. Known prior guarded sandbox probe could not reach devflow_test; no prohibited retry or application connection attempted. |
+| Live GitHub / browser visuals | Not executed                                                                                  | No OAuth/provider, repository, webhook, live worker or screenshot acceptance claimed.                                                                                                           |
+
+No schema migration, dependency or environment-example change is needed. All provider
+requests in unit/database/browser fixtures are mocked; the unit run clears live
+AI/GitHub client variables. No live credential was loaded or used for a request.
+No application migration, seed, reset, connection/rule change or DEV-002 operation
+was performed. At runtime the action writes only existing operational rate-limit
+budgets/cooldowns; domain records and provider resources are never changed.
+
+Build snapshot: /tmp/devflow-m35-revalidation-build-nn1fr01i. Tracked/new source was
+copied without private .env files or generated output, and installed node_modules
+was symlinked. Build used blank AI/GitHub client credentials,
+NEXT_TELEMETRY_DISABLED=1, APP_URL=http://localhost:3000 and the non-live placeholder
+DATABASE_URL at localhost:1/devflow_build_test. No database/provider connection was
+needed. The existing application .next/dev output and local server were untouched.
+Logs: /tmp/devflow-m35-revalidation-unit-final.log and
+/tmp/devflow-m35-revalidation-build.log. Package/lockfile/schema are unchanged.
+
+### Executed coverage and honest limitations
+
+Unit cases validate own-account/configured-grant selection, no other member token
+lookup/fallback, identity preservation, admin/foreign scope denial, missing/partial
+configuration, HTTP 401/403/404/5xx, redirects, malformed/network failures, permission
+true/false/missing evidence, account/repository identity changes, header Retry-After/
+reset timing versus no timing, local cooldown reuse, changed credentials/grants,
+disconnect/role-loss races and local budget rejection. External requests are bounded
+GETs; runtime code never holds a database transaction open during network reads.
+No test fabricates distinct expired/revoked proof: existing OAuth schema stores no
+expiry evidence, and 401 alone is deliberately AUTHORIZATION_REJECTED.
+
+HTTP cases verify same-origin POST, empty strict body, authenticated actor, membership/
+admin protection, no GET action, no-store and sanitized errors. UI cases verify no
+mount/reconnect/background checks, explicit loading and retry, no offline queue,
+admin-only visibility, scope reset/mismatch, fixed diagnostic copy, known-deadline
+waiting and missing-deadline behavior. Existing GitHub/AI/roadmap/worker tests still
+pass. These are mocks/DOM checks, not real GitHub or PostgreSQL concurrency evidence.
+
+Eight new PostgreSQL cases cover scoped real authorization, unchanged domain rows,
+other-authorizer restrictions, credential/grant/disconnect/role-change races,
+observed cooldown persistence, identity/permission failures and atomic request
+budgets. They have not executed here. The extended browser fixture permits only
+the explicit diagnostic POST and asserts none occurs before the click; it is not
+server authorization or provider acceptance. No screenshots were captured.
+
+### Safe Fedora-local verification
+
+Use the existing ignored .env with distinct application/test URLs. Only devflow_test
+is allowed for automated database/browser fixtures. Step 5 adds no migration or seed.
+
+```bash
+node --import tsx <<'NODE'
+require('dotenv/config');
+const { requireTestDatabase } = require('./tests/database-config.ts');
+const target = requireTestDatabase(process.env.DATABASE_URL, process.env.TEST_DATABASE_URL);
+if (target.pathname !== '/devflow_test') throw Error('Only devflow_test permitted');
+console.log('Verified isolated test target', target.hostname, target.port, target.pathname);
+NODE
+# Continue only if the guard succeeds; use the already-reviewed migrated test schema.
+AI_API_KEY= GITHUB_CLIENT_ID= GITHUB_CLIENT_SECRET= pnpm exec vitest run --config vitest.integration.config.ts tests/github-revalidation.integration.test.ts
+AI_API_KEY= GITHUB_CLIENT_ID= GITHUB_CLIENT_SECRET= pnpm test:integration
+AI_API_KEY= GITHUB_CLIENT_ID= GITHUB_CLIENT_SECRET= pnpm exec vitest run --pool=forks
+pnpm typecheck
+pnpm typecheck:core
+pnpm lint
+pnpm format:check
+pnpm github:worker:build
+# Stop the local dev server first or use a separate source copy for build/E2E output.
+# Keep 3100 free; Playwright must start its own isolated server.
+AI_API_KEY= GITHUB_CLIENT_ID= GITHUB_CLIENT_SECRET= pnpm test:e2e e2e/github-health.spec.ts --reporter=list,html
+AI_API_KEY= GITHUB_CLIENT_ID= GITHUB_CLIENT_SECRET= pnpm build:webpack
+```
+
+Database fixtures create fresh local users/workspaces/projects/disabled rules;
+cleanup is restricted to their IDs and rate-limit keys. They stub all provider
+requests and never operate on live rules or DEV-002. Do not substitute the running
+application server/database for the isolated test configuration.
+
+For a separately deliberate owner-run live read, use an already authorized admin
+session → GitHub → existing project → Connection revalidation. Read the consent
+text and click Revalidate GitHub access only when you intend up to two external
+GitHub GETs. If another authorizer owns enrichment, that administrator must check
+it themselves. Verify checked source/time and unchanged repository identity/settings.
+Do not rotate credentials, revoke grants, retarget repositories, register webhooks,
+enable rules or alter tasks merely to test failure states; mocked suites cover those.
+A successful metadata/admin check is not complete enrichment/webhook acceptance.
+No live check was performed by the agent.
+
+Prepared commit: `feat(github): add explicit connection revalidation diagnostics`.
+Wait for owner commit confirmation before step 6. No Git metadata write/push/merge
+was attempted; M3.5 database/browser/live acceptance gates remain open.
+
+## Historical change — M3.5 step 4: administrator health panel (2026-11-17)
 
 Confirmed fb5d5b0 on feat/m3-5-operational-readiness and a clean starting tree.
 This step displays the Step 3 API inside the existing GitHub event-processing

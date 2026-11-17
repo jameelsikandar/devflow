@@ -8,7 +8,8 @@ M3.2 event processing, M3.3 workflow definitions/dry-run previews, and M3.4
 confirmed future-event status automation. Database/browser/live automation acceptance
 remains open in this sandbox. M3.5 step 2 adds durable worker signals and evidence classification; step 3 now
 provides administrator-only operational summary APIs. Step 4 prepares their
-display in the existing processing panel; later operational work remains pending. Step 2 migration verification remains unavailable in this sandbox.
+display in the existing processing panel (committed e3f6ecf). Step 5 adds explicit
+connection diagnostics; later operational work remains pending. Step 2 migration verification remains unavailable in this sandbox.
 This is **not a claim that the entire DevFlow 2.0 mission is finished**. The checklist
 in `UPGRADE_PLAN.md` records the remaining phases and open release gates.
 
@@ -1147,3 +1148,46 @@ No backend authorization, schema, worker, automation rule or domain mutation ser
 is changed. No live GitHub action or application data mutation is performed.
 Prepared commit: `feat(github): display operational health in existing panels`.
 Stop for owner commit confirmation before step 5; M3.5 remains incomplete.
+
+## M3.5 step 5 — explicit repository connection diagnostics (2026-11-17)
+
+Confirmed e3f6ecf on the feature branch with a clean tree. Owner-reported local
+application evidence: worker-health migration applied, schema current, working
+healthy-idle UI and zero pending/failed/dead-letter deliveries. This is owner
+manual evidence, not agent-executed PostgreSQL/browser test results. No existing
+application records or live GitHub credentials are used during implementation.
+
+The new same-origin POST action derives the authenticated actor and project from
+the authorized workspace connection, accepts no identity overrides, and uses only
+the requesting administrator's OAuth credential. If enrichment is configured by
+someone else it reports inconclusive and requests that authorizer's check; no
+fallback credential is silently used. Missing accounts, unreadable encryption,
+inactive scope, invalid identity, missing permissions and provider failures have
+sanitized diagnostics. Two bounded GETs at most check account authentication and
+repository metadata/admin evidence; all enrichment/webhook capabilities are not
+claimed verified. HTTP 401 is authorization rejected with unresolved cause, not
+fabricated separate expired/revoked conclusions: no expiry metadata is stored.
+
+Local authorization and credential/configuration fingerprints are rechecked between
+requests and before publication; positive stale evidence cannot silently retarget
+or reconnect a repository. External reads never hold long database transactions.
+Domain records remain unchanged. Existing per-admin RateLimit budgets and shared
+credential cooldown metadata are the only runtime database writes. Observed header
+timing is distinguished from recorded local cooldowns; no invented worker fallback
+retry time is presented as provider evidence. Existing worker behavior is unchanged.
+
+The existing event-processing administrator panel gains an explicit check button,
+loading state, source/time/result, safe guidance and deliberate retry. Mounting,
+health polling, reconnecting a browser or returning to the scope does not run a
+check. A changed enrichment setting clears the local diagnostic. No raw error,
+token, observed private repository metadata or another authorizer's identity is
+returned or rendered. Results are ephemeral, not durable validation grants.
+
+Executed unit/HTTP/UI suite: 417 passed in 44 files (24 service, 3 route, 15 UI
+cases added). Eight new real-DB cases are written but not run here. Existing
+browser journey adds an explicit mocked revalidation step; two configured cases
+are discovered, not executed or live GitHub acceptance. Static, formatting and
+isolated production build results/local commands are in VERIFICATION.md.
+Prepared commit: `feat(github): add explicit connection revalidation diagnostics`.
+No push, merge, worker start, live OAuth action, application migration, rule edit
+or DEV-002 change occurred. Stop for the owner commit before step 6.

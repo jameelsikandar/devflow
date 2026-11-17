@@ -8,15 +8,16 @@ M3.4 now adds explicitly confirmed future-event status automation. Its latest
 section below supersedes earlier preview-only deployment notes. Existing OAuth,
 repository browsing, commit history and open-PR reads are retained.
 
-## Current operational status — M3.5 step 4
+## Current operational status — M3.5 step 5
 
 M3.1–M3.4 source is implemented. M3.5 is approved for operational acceptance and
 hardening. Baseline documentation and formatting cleanup are committed; this
-change displays the committed administrator-only summary API inside the existing
-GitHub processing panel (details at the end).
+change adds explicit administrator connection revalidation alongside the committed
+health panel (details at the end).
 Existing processing controls, task links, previews and confirmed PR automation retain
-their current behavior. Explicit connection revalidation, retention reporting
-and CI remain later steps. Health visual acceptance remains open. The baseline ledger is historical; the step 2 section
+their current behavior. Retention reporting and CI remain later steps. The owner
+reports local healthy-idle operation; sandbox browser/database and live revalidation
+acceptance remain open. The baseline ledger is historical; the step 2 section
 at the end records the current implementation and unverified database gate;
 earlier phase sections remain historical implementation/setup records.
 
@@ -977,3 +978,90 @@ journey is intended to capture both themes at 1440, 1024, 768 and 390 pixels in
 both configured browser projects. Those checks are unexecuted here: DOM/theme
 semantics and builds do not prove visual or responsive acceptance. Run the local
 commands in VERIFICATION.md and inspect screenshots before closing that gate.
+
+## M3.5 step 5 — explicit connection revalidation
+
+In **GitHub → GitHub event processing → Connection revalidation**, an owner/admin
+may click **Revalidate GitHub access**. This is an intentional external read, not
+part of health refresh/polling. No check runs on mount, reconnect, scope change,
+background timer or retry automatically. Offline attempts fail rather than queueing
+for later. Leaving this scope clears the displayed result; it is not a durable
+access grant or a replacement for worker/webhook health.
+
+```text
+POST /api/github/repositories/:connectionId/revalidate?workspaceId=:workspaceId
+Content-Type: application/json
+Body: {}
+```
+
+The existing same-origin/session/workspace checks and administrator project
+helper enforce authorization. Members cannot invoke this operation, foreign
+connections return 404 and body identity/settings overrides are rejected. Success
+and action errors are no-store. Provider failures become fixed evidence codes;
+raw provider messages, tokens, credential hashes and observed repository/account
+metadata are omitted. The UI renders allowlisted local copy and validates scope.
+
+Credential selection is deliberately conservative:
+
+- A complete enrichment grant is checked only by its authorizing administrator.
+  Another administrator receives OTHER_ENRICHMENT_AUTHORIZER without loading or
+  using that member's token. The authorizer must run their own explicit check.
+- With no enrichment grant, the requesting administrator's own linked OAuth account
+  is checked. A valid result does not enable enrichment or validate someone else's
+  grant. Partial/inconsistent grants are inconclusive without a fallback.
+- No stored OAuth account is NOT_CONFIGURED, not proof of revocation. Unreadable
+  encrypted credentials are inconclusive and require manual server configuration
+  review. No credential is rotated, refreshed, replaced or silently reconnected.
+
+The bounded check performs GET /user and GET /repos/{stored owner/repository}
+through the existing GitHub transport (15-second per-request bound, redirects
+rejected, fixed GitHub origin, bounded response). No provider write or arbitrary
+webhook-supplied URL is used. ID/name must match the stored identity; account login
+must match its stored OAuth login. Case-only differences do not retarget records.
+Account/repository renames, transfers or replacements are reported for manual review,
+not repaired. Administrator permission must be explicitly true. Missing evidence
+is inconclusive; explicitly false is insufficient permission. Archived/disabled
+repositories are inaccessible. A valid result verifies authentication and repository
+metadata/admin evidence only, not every enrichment API scope, webhook permission,
+registration, signature, delivery or execution rule.
+
+Evidence states:
+
+| State                           | Evidence / limitation                                                                                                                                                          |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| VALID                           | Authentication, stored identity, active repository and explicit administrator permission verified for the indicated account/source.                                            |
+| AUTHORIZATION_REJECTED          | GitHub returned 401; revoked, expired and invalid cannot be distinguished. Existing OAuth storage has no expiry metadata; no age-based inference is made.                      |
+| INACCESSIBLE                    | Repository 404/403 after account authentication, inactive repository or explicit repository identity mismatch. A 404 does not prove deletion; a 403 does not prove revocation. |
+| INSUFFICIENT_PERMISSION         | Repository response explicitly reports admin=false.                                                                                                                            |
+| NOT_CONFIGURED                  | The checked administrator's OAuth account is absent.                                                                                                                           |
+| INCONCLUSIVE                    | Missing permission evidence, another grant authorizer, changed account/configuration, provider/rate-limit/network failure or unrecognized response.                            |
+| DISCONNECTED / PROJECT_ARCHIVED | Current local scope is unavailable; never reconnected or restored by the check.                                                                                                |
+
+Authorization, stored identity, grant version/authorizer and credential fingerprint
+are checked before/between provider reads and before returning results. Concurrent
+role loss, disconnect, archive, credential replacement or grant edits cannot publish
+stale positive evidence. External requests run outside database transactions.
+A response is still point-in-time evidence, not a guarantee about later access.
+
+The only runtime writes are existing operational RateLimit records: three checks
+per minute for external-capable checks per workspace/connection/requesting administrator, plus shared encrypted-
+credential-hash cooldowns when real rate-limit headers provide timing. Cooldown
+updates use GREATEST, never shorten an existing delay, and reuse worker infrastructure.
+Provider-header deadlines are distinguished from recorded local cooldowns, which
+may reflect the existing worker's fallback scheduling. A provider 429 without
+observed timing returns no guessed retry time. UI waits for known deadlines but
+never retries automatically; local HTTP 429 budgets simply advise retrying later.
+Existing transport retry/lease/replay behavior is unchanged; the small transport
+change types observed header timing already carried by GitHubHttpError.
+
+No tasks, activities, rules, connections, credentials, webhook registrations,
+GitHub objects, observations or delivery/execution receipts are mutated. No schema
+migration or new external service is needed. No diagnostic history/retention deletion
+is added. Manual OAuth repair or repository reconfiguration is a separate explicit
+operation; this button never takes those actions for you.
+
+Tests mock provider HTTP responses; real PostgreSQL cases use only devflow_test
+and fresh fixtures. The browser journey intercepts diagnostic POSTs and checks that
+none runs before an explicit click. Those browser/database/live gates remain
+unexecuted here; see VERIFICATION.md for actual counts and Fedora commands. Do not
+interpret a mock valid result as validation of a live connection.

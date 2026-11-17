@@ -27,8 +27,24 @@ test('administrator health is read-only, responsive and explicit about stale/err
   const scope = { workspaceId, projectId: project.id, connectionId: 'ui-health-fixture' };
   let fail = false;
   const writes: string[] = [];
+  let revalidations = 0;
   await page.route('**/api/github**', async (route) => {
     const path = new URL(route.request().url()).pathname;
+    if (path.endsWith('/revalidate') && route.request().method() === 'POST') {
+      revalidations++;
+      expect(route.request().postDataJSON()).toEqual({});
+      return route.fulfill({
+        json: {
+          scope,
+          checkedAt: new Date().toISOString(),
+          authorizationSource: 'REQUESTING_ADMIN',
+          state: 'VALID',
+          code: 'ACCESS_VALID',
+          retryAt: null,
+          retrySource: null,
+        },
+      });
+    }
     if (route.request().method() !== 'GET') {
       writes.push(path);
       return route.fulfill({ status: 405, json: { error: 'UI fixture forbids GitHub writes' } });
@@ -100,4 +116,11 @@ test('administrator health is read-only, responsive and explicit about stale/err
   await refresh.click();
   await expect(health.getByRole('alert')).toHaveCount(0);
   expect(writes).toEqual([]);
+  expect(revalidations).toBe(0);
+  const revalidation = page.getByRole('region', { name: 'Connection revalidation', exact: true });
+  await revalidation.getByRole('button', { name: 'Revalidate GitHub access', exact: true }).click();
+  await expect(revalidation).toContainText('Repository access verified');
+  await expect(revalidation).toContainText('Your OAuth account only');
+  expect(revalidations).toBe(1);
+  expect(writes).toEqual([]); // No GitHub resource mutation, enrichment or retry requests.
 });

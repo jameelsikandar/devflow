@@ -1,3 +1,4 @@
+import { revalidateGitHubConnection } from '@/lib/server/github-revalidation';
 import { githubOperationalHealth } from '@/lib/server/github-operational-health';
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
@@ -83,8 +84,8 @@ const taskInclude = {
 const activityInclude = { actor: { select: personSelect } };
 async function handler(request: Request, { params }: { params: Promise<{ path: string[] }> }) {
   let operationalHealthRead = false;
+  let connectionRevalidation = false;
   try {
-    guardOrigin(request);
     const { path } = await params;
     operationalHealthRead =
       path.length === 4 &&
@@ -92,6 +93,14 @@ async function handler(request: Request, { params }: { params: Promise<{ path: s
       path[1] === 'repositories' &&
       path[3] === 'health' &&
       request.method === 'GET';
+    connectionRevalidation =
+      path.length === 4 &&
+      path[0] === 'github' &&
+      path[1] === 'repositories' &&
+      path[3] === 'revalidate' &&
+      request.method === 'POST';
+    // Recognize diagnostic responses for no-store, then enforce origin before auth/body/DB work.
+    guardOrigin(request);
     const route = path.join('/');
     const method = request.method;
     const url = new URL(request.url);
@@ -544,6 +553,14 @@ async function handler(request: Request, { params }: { params: Promise<{ path: s
         text: await generateAssistant(input.action, input.prompt, projects),
       });
     }
+    if (connectionRevalidation) {
+      z.object({})
+        .strict()
+        .parse(await jsonBody(request));
+      return NextResponse.json(await revalidateGitHubConnection(actor, path[2]), {
+        headers: { 'Cache-Control': 'no-store' },
+      });
+    }
     if (operationalHealthRead)
       return NextResponse.json(await githubOperationalHealth(actor, path[2]), {
         headers: { 'Cache-Control': 'no-store' },
@@ -708,7 +725,8 @@ async function handler(request: Request, { params }: { params: Promise<{ path: s
     throw new HttpError(404, 'Endpoint not found');
   } catch (error) {
     const response = errorResponse(error);
-    if (operationalHealthRead) response.headers.set('Cache-Control', 'no-store');
+    if (operationalHealthRead || connectionRevalidation)
+      response.headers.set('Cache-Control', 'no-store');
     return response;
   }
 }

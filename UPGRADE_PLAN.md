@@ -1,11 +1,11 @@
 # DevFlow 2.0 upgrade
 
 Current implementation: M1, M2 and M3.1–M3.4. Current approved work: **M3.5 —
-operational acceptance and hardening**, step 4 (operational health in existing administrator panels).
+operational acceptance and hardening**, step 5 (explicit GitHub connection revalidation diagnostics).
 M3.5 is not complete. The current status and checklist below supersede older
 planning statements; dated results remain historical evidence, not fresh passes.
 
-## Current status — M3.5 step 4 (2026-11-17)
+## Current status — M3.5 step 5 (2026-11-17)
 
 The owner created `feat/m3-5-operational-readiness` from `48d7b5c` on clean `main`.
 The initial feature-branch check confirmed a clean working tree and empty index.
@@ -19,7 +19,11 @@ repository-wide format check initially failed on four pre-existing files; the ow
 committed the separate formatting-only fix f101e28 after step 1. Step 2 adds worker
 signal persistence/classification (committed 8fbdc3e); step 3 prepares the
 administrator-only summary API (committed fb5d5b0). Step 4 prepares the existing
-GitHub processing panel health display; visual acceptance remains unexecuted.
+GitHub processing panel health display (committed e3f6ecf). The owner reports
+local migration/application schema current, healthy-idle UI with recent heartbeat/
+poll and zero pending/failed/dead-letter deliveries. That owner evidence does not
+replace unexecuted sandbox database/browser cases. Step 5 prepares explicit
+connection revalidation; no live revalidation was run here.
 
 M3.5 reuses the existing queue, workflow executor, task activity and administrator
 panels. Approved scope: lightweight PostgreSQL worker health, scoped operational
@@ -509,20 +513,20 @@ follows below. Unrelated actions/automation triggers remain excluded.
 ## M3.5 approved sequence and acceptance gates — 2026-11-15
 
 Step 1 documentation (f1a1a2b) and formatting cleanup (f101e28) were confirmed by
-the owner before step 2 began. Step 2 was confirmed as 8fbdc3e with a clean tree. Step 3 was confirmed as fb5d5b0 with a clean tree. Step 4 is prepared for the
-owner's local commit. **Do not begin step 5 until that commit is confirmed.**
+the owner before step 2 began. Step 2 was confirmed as 8fbdc3e with a clean tree. Step 3 was confirmed as fb5d5b0 with a clean tree. Step 4 was confirmed as e3f6ecf with a clean tree. Step 5 is prepared for the
+owner's local commit. **Do not begin step 6 until that commit is confirmed.**
 
-| Step | Focused commit                                                    | State                                                  |
-| ---- | ----------------------------------------------------------------- | ------------------------------------------------------ |
-| 1    | docs: reconcile milestone status and operational acceptance gates | Committed: f1a1a2b                                     |
-| 2    | feat(ops): persist scoped worker health signals                   | Committed: 8fbdc3e; PostgreSQL evidence not supplied   |
-| 3    | feat(github): expose authorized operational health summaries      | Committed: fb5d5b0                                     |
-| 4    | feat(github): display operational health in existing panels       | Prepared; visual gate unexecuted; owner commit pending |
-| 5    | feat(github): add explicit connection revalidation diagnostics    | Pending                                                |
-| 6    | feat(ops): add read-only retention impact reports                 | Pending                                                |
-| 7    | test: cover operational failure and recovery journeys             | Pending                                                |
-| 8    | chore: add isolated CI verification                               | Pending                                                |
-| 9    | docs: publish M3.5 deployment and acceptance runbooks             | Pending                                                |
+| Step | Focused commit                                                    | State                                                   |
+| ---- | ----------------------------------------------------------------- | ------------------------------------------------------- |
+| 1    | docs: reconcile milestone status and operational acceptance gates | Committed: f1a1a2b                                      |
+| 2    | feat(ops): persist scoped worker health signals                   | Committed: 8fbdc3e; PostgreSQL evidence not supplied    |
+| 3    | feat(github): expose authorized operational health summaries      | Committed: fb5d5b0                                      |
+| 4    | feat(github): display operational health in existing panels       | Committed: e3f6ecf; owner reports local healthy-idle UI |
+| 5    | feat(github): add explicit connection revalidation diagnostics    | Prepared; owner commit and live check pending           |
+| 6    | feat(ops): add read-only retention impact reports                 | Pending                                                 |
+| 7    | test: cover operational failure and recovery journeys             | Pending                                                 |
+| 8    | chore: add isolated CI verification                               | Pending                                                 |
+| 9    | docs: publish M3.5 deployment and acceptance runbooks             | Pending                                                 |
 
 Relevant tests accompany each functional step; discovered defects get their own
 focused fix commits rather than being hidden in unrelated changes. No reset,
@@ -536,7 +540,7 @@ amend, rebase, push or merge is authorized. Only the owner stages/commits locall
       `chore: normalize baseline source formatting` change (f101e28); checks rerun.
 - [x] Implement worker signal persistence/classification without misleading idle/bounded/unknown alerts (step 2 source; PostgreSQL acceptance pending).
 - [x] Add administrator-only operational summary reads (step 3 source; PostgreSQL verification blocked).
-- [ ] Add explicit authorized connection diagnostics without silently mutating connections (step 5).
+- [x] Add explicit authorized connection diagnostics without silently mutating connections (step 5 source; real database/browser/live verification pending).
 - [ ] Add retention policy/dependency impact reporting without deletion or archival.
 - [ ] Add isolated CI and operational failure/recovery coverage; preserve replay,
       idempotency, authorization, task-version and lease-fencing guarantees.
@@ -618,3 +622,28 @@ PostgreSQL acceptance remain unexecuted in the sandbox. No screenshot is claimed
 See VERIFICATION.md for final checks and safe local commands. No live data, rules,
 connections, worker or DEV-002 was modified. **Wait for the owner commit before
 step 5.** M3.5 cannot close until its remaining actual acceptance gates pass.
+
+### Step 5 — explicit connection revalidation (2026-11-17)
+
+Verified e3f6ecf and a clean feature branch. POST
+/api/github/repositories/:connectionId/revalidate?workspaceId=... requires an
+explicit same-origin administrator request with empty JSON body. It checks only
+the configured authorizer's own credentials, or the requesting administrator's
+account when enrichment is unset; it never borrows another member's token.
+Up to two bounded GitHub GETs verify account login and stored repository ID/name,
+active state and explicit admin permission. Missing permission evidence is
+inconclusive; 401 cannot distinguish expired/revoked/invalid credentials. No
+identity, setting, credential, webhook, task or rule is changed by this diagnostic.
+
+Authorization/context is checked before/between external reads and at completion;
+changed credentials/grants, role loss, disconnect and archive prevent a valid result.
+Only existing operational RateLimit metadata is written for per-admin request
+budgets and observed cooldowns, never provider resources. External reads happen
+outside database transactions; no automatic retries or offline mutation queue.
+The existing panel displays local sanitized copy, point-in-time evidence/source,
+known retry timing, explicit loading/error/retry controls and no automatic check.
+
+Unit/route/UI coverage and eight isolated PostgreSQL cases accompany this step.
+PostgreSQL, browser and live GitHub checks remain unexecuted in this sandbox;
+417 unit tests pass. Exact static/build results and local commands are in
+VERIFICATION.md. **Wait for owner commit confirmation before step 6.**
