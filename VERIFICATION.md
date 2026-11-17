@@ -1,6 +1,118 @@
 # DevFlow local verification
 
-## Current change — M3.5 step 5: explicit connection revalidation (2026-11-17)
+## Current change — M3.5 step 6: read-only retention impact (2026-11-18)
+
+Verified 09a32aa on feat/m3-5-operational-readiness and a clean starting tree. Owner
+manual evidence: working worker-health UI, correct idle/unavailable distinction,
+repository/admin-access revalidation, and no retargeting/automation changes. This
+is manual owner evidence, not agent-executed PostgreSQL/browser acceptance.
+
+### Actual checks
+
+| Check                      | Executed command                                                                              | Result                                                                                                                                                                                                         |
+| -------------------------- | --------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Full TypeScript            | node_modules/.bin/tsc --noEmit --pretty false                                                 | Passed                                                                                                                                                                                                         |
+| Core TypeScript            | node_modules/.bin/tsc --noEmit -p tsconfig.core.json --pretty false                           | Passed                                                                                                                                                                                                         |
+| Worker compilation         | node_modules/.bin/tsc -p tsconfig.worker.json --pretty false                                  | Passed; no worker started                                                                                                                                                                                      |
+| ESLint                     | node_modules/.bin/eslint .                                                                    | Passed                                                                                                                                                                                                         |
+| Prisma schema              | node_modules/.bin/prisma validate                                                             | Passed; schema unchanged                                                                                                                                                                                       |
+| Full unit/HTTP/DOM suite   | AI_API_KEY= GITHUB_CLIENT_ID= GITHUB_CLIENT_SECRET= node_modules/.bin/vitest run --pool=forks | **441 passed, 47 files, 0 failed**; 13 policy/service, 3 HTTP and 8 UI cases added                                                                                                                             |
+| Webpack production build   | next build --webpack in isolated source copy below                                            | Passed                                                                                                                                                                                                         |
+| Repository formatting/diff | node_modules/.bin/prettier --check .; git diff --check                                        | Passed                                                                                                                                                                                                         |
+| Playwright discovery       | node_modules/.bin/playwright test e2e/github-health.spec.ts --list                            | **2 cases discovered**, not executed; journey now includes retention preview and table overflow checks                                                                                                         |
+| PostgreSQL integration     | Not executed                                                                                  | **11 new database cases unexecuted**. The known guarded sandbox probe could not reach devflow_test; it was not repeatedly retried. No SQL/runtime/performance or read-only-engine pass is inferred from mocks. |
+| Browser/live actions       | Not executed                                                                                  | No screenshots, actual responsive/keyboard acceptance, live GitHub request or worker run claimed                                                                                                               |
+
+The first DOM loading assertion ran before React Query's batched notification; it
+was corrected to wait for the disabled pending state rather than sleeping or
+weakening the assertion. Final focused and full suites pass. Existing authorization,
+GitHub/AI/roadmap/replay/worker regressions remain passing in the unit suite.
+
+Build source copy: /tmp/devflow-m35-retention-build-ifzd8ggk, tracked/new files only,
+no private .env or generated output, symlinked installed node_modules. The build
+used blank AI/GitHub credentials, NEXT_TELEMETRY_DISABLED=1,
+APP_URL=http://localhost:3000 and a non-live placeholder DATABASE_URL at
+localhost:1/devflow_build_test. Dynamic routes required no provider/database calls.
+The application .next/dev output and running server were untouched.
+Logs: /tmp/devflow-m35-retention-unit.log and /tmp/devflow-m35-retention-build.log.
+No dependency, lockfile, schema, migration, configuration policy or environment-file
+change was introduced. No app/test database write, seed, reset, cleanup, archive,
+scheduler, worker, provider action or DEV-002 operation was performed here.
+
+### Coverage and limitations
+
+Executed cases check administrator enforcement before aggregates; readonly/timeout
+transaction commands; 7/30/90 windows and invalid inputs; grouped counts/age ranges;
+dependency overlap; fail-closed caps; scope-bound parameterized metadata queries;
+replay/audit-preserving policy; missing/future age data; strict GET/no execution
+route; session/membership/admin and no-store behavior; UI loading/empty/error/retry,
+role/scope/window reset, private field omission, partial reports and theme/table
+semantics. DOM theme/keyboard semantics do not establish visual acceptance.
+
+Real SQL tests use the same query factory with a fixed clock for exact cutoff
+boundaries, so the 1ms-before/equal/after checks do not race a wall clock. Additional
+PostgreSQL cases cover complete provenance/FKs and unchanged domain rows,
+active/unresolved states, worker anchors including an older progress-bearing run,
+disconnected history/isolation, 10,001-row overflow and an attempted isolated write
+rejected by PostgreSQL READ ONLY. They are written but **not executed**. Query
+plans, runtime and timeout behavior require local verification; no constant disk
+scan bound is claimed from the matched-row limit.
+
+Each category scans at most 10,001 matched metadata rows before deciding whether
+analysis is complete. Exact totals/ages/candidate counts are null above 10,000;
+no sample is presented as a complete result. Server output is bounded groups, not
+record lists. Existing scoped/FK indexes and 4s statement/15s transaction budgets
+bound expensive requests; actual planner work can vary. Source payload JSON,
+credentials, raw task refs and private error text are not selected into the app.
+
+### Safe Fedora-local verification
+
+Use the existing dedicated devflow_test with the reviewed prior migrations. No
+Step 6 migration or seed is needed. Do not run these fixtures on application data.
+
+```bash
+node --import tsx <<'NODE'
+require('dotenv/config');
+const { requireTestDatabase } = require('./tests/database-config.ts');
+const target = requireTestDatabase(process.env.DATABASE_URL, process.env.TEST_DATABASE_URL);
+if (target.pathname !== '/devflow_test') throw Error('Only devflow_test permitted');
+console.log('Verified isolated test target', target.hostname, target.port, target.pathname);
+NODE
+# Continue only if the guard succeeds:
+AI_API_KEY= GITHUB_CLIENT_ID= GITHUB_CLIENT_SECRET= pnpm exec vitest run --config vitest.integration.config.ts tests/github-retention.integration.test.ts
+AI_API_KEY= GITHUB_CLIENT_ID= GITHUB_CLIENT_SECRET= pnpm test:integration
+AI_API_KEY= GITHUB_CLIENT_ID= GITHUB_CLIENT_SECRET= pnpm exec vitest run --pool=forks
+pnpm typecheck
+pnpm typecheck:core
+pnpm lint
+pnpm format:check
+pnpm exec prisma validate
+pnpm github:worker:build
+# Stop the local dev server or use a separate source copy to isolate .next output.
+# Keep port 3100 free; Playwright must start its own isolated test server.
+AI_API_KEY= GITHUB_CLIENT_ID= GITHUB_CLIENT_SECRET= pnpm test:e2e e2e/github-health.spec.ts --reporter=list,html
+AI_API_KEY= GITHUB_CLIENT_ID= GITHUB_CLIENT_SECRET= pnpm build:webpack
+```
+
+The large-scope SQL case inserts 10,001 fresh test receipts in bounded batches and
+cleans only its fixture workspace. The read-only-enforcement case attempts an update
+only to its newly created devflow_test fixture inside a read-only transaction and
+asserts rollback/unchanged state. No application data or existing rules are touched.
+Provider fetch is stubbed to reject unexpected requests. Browser fixtures mock
+GitHub, health, revalidation and retention responses; they do not prove live
+provider/SQL authorization. Inspect generated screenshots and overflow at four
+widths locally; none were captured here.
+
+Manual inspection: existing GitHub project → GitHub event processing → Retention
+impact report → proposed 7/30/90 days → Generate read-only report. Verify timestamp
+bases, preserved replay/audit records, incomplete versus empty reports and lack of
+cleanup actions. Reporting needs no OAuth token, live GitHub request or worker.
+
+Prepared commit: `feat(ops): add read-only retention impact reports`. Wait for the
+owner commit before step 7. Retention execution is not implemented or authorized;
+M3.5 PostgreSQL/browser/final operational acceptance gates remain open.
+
+## Historical change — M3.5 step 5: explicit connection revalidation (2026-11-17)
 
 Verified e3f6ecf on feat/m3-5-operational-readiness and a clean starting tree. Owner
 manual evidence: application worker-health migration applied, schema current,

@@ -8,16 +8,16 @@ M3.4 now adds explicitly confirmed future-event status automation. Its latest
 section below supersedes earlier preview-only deployment notes. Existing OAuth,
 repository browsing, commit history and open-PR reads are retained.
 
-## Current operational status — M3.5 step 5
+## Current operational status — M3.5 step 6
 
 M3.1–M3.4 source is implemented. M3.5 is approved for operational acceptance and
 hardening. Baseline documentation and formatting cleanup are committed; this
-change adds explicit administrator connection revalidation alongside the committed
-health panel (details at the end).
+change adds read-only project retention impact reports alongside committed health
+and explicit connection diagnostics (details at the end).
 Existing processing controls, task links, previews and confirmed PR automation retain
-their current behavior. Retention reporting and CI remain later steps. The owner
-reports local healthy-idle operation; sandbox browser/database and live revalidation
-acceptance remain open. The baseline ledger is historical; the step 2 section
+their current behavior. Failure/recovery verification, CI and final runbooks remain
+later steps. The owner reports healthy-idle/unavailable monitoring and successful
+live access revalidation; sandbox PostgreSQL/browser verification remains open. The baseline ledger is historical; the step 2 section
 at the end records the current implementation and unverified database gate;
 earlier phase sections remain historical implementation/setup records.
 
@@ -1065,3 +1065,82 @@ and fresh fixtures. The browser journey intercepts diagnostic POSTs and checks t
 none runs before an explicit click. Those browser/database/live gates remain
 unexecuted here; see VERIFICATION.md for actual counts and Fedora commands. Do not
 interpret a mock valid result as validation of a live connection.
+
+## M3.5 step 6 — read-only retention impact reports
+
+Open GitHub → existing project → GitHub event processing → **Retention impact
+report**. Choose a proposed 7, 30 or 90 days and click **Generate read-only report**.
+Only owners/admins see/report this data. No report runs on mount or polling; window
+changes clear the prior result and require another explicit GET. The proposal is
+not saved. There is no delete/archive/schedule/execute control or API.
+
+```text
+GET /api/github/projects/:projectId/retention?workspaceId=:workspaceId&days=30
+```
+
+Uses authenticated identity and existing administrator project authorization. Both
+success and error results are no-store. All queries filter the authorized project/
+workspace; disconnected connections are intentionally included. This project-wide
+scope differs from the neighboring single-connection health snapshot. Payloads,
+OAuth/webhook secrets, record IDs, titles, raw errors, task references and other
+users' data are not returned. Schema validation/scope matching and generic UI errors
+prevent stale/foreign responses from being displayed. Role loss unmounts the report.
+
+The UTC DB transaction clock establishes the cutoff: strictly older than N × 24
+hours. Exact-cutoff and future-dated records remain within-window. Counts and raw
+oldest/newest timestamps are provided, with approximate age-in-days UI ranges.
+Age bases and conservative preservation policy:
+
+| Category                        | Age basis                                  | Older-record policy                                                                                                                                                      |
+| ------------------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Webhook deliveries / processing | receivedAt                                 | Pending/processing active; failed unresolved; processed/cancelled receipts preserved for replay/hash deduplication. Receipt deletion is never proposed.                  |
+| Observations                    | receivedAt                                 | Incomplete/unresolved references protected; all immutable source provenance retained, linked or unlinked.                                                                |
+| GitHub objects                  | createdAt                                  | Current projections and stable object identities retained, including objects without currently linked tasks.                                                             |
+| Task associations               | createdAt                                  | Current task associations retained.                                                                                                                                      |
+| Link evidence                   | Observation receivedAt                     | Audit evidence retained. Evidence has no independent creation timestamp; do not infer one.                                                                               |
+| Workflow executions             | Greatest createdAt/startedAt/completedAt   | Pending active; failed/conflicted unresolved; applied/skipped audit/idempotency history retained. Logical claim/duplicate history and activity attribution must survive. |
+| Worker signals                  | Greatest start/heartbeat/poll/progress/end | RUNNING/unfinished and FAILED retained. Only older COMPLETED/STOPPED superseded evidence may be a potential candidate, subject to preserved anchors below.               |
+
+Worker anchors preserve the most recent heartbeat per connection/mode, latest
+non-future heartbeat evidence, and latest poll/progress evidence (including the
+latest non-future values). Ties for maximum poll/progress are conservatively kept.
+A newer idle run must not erase the only progress-bearing older run. Crashed RUNNING
+records do not become terminal merely by aging. No retention execution or automatic
+state resolution is implemented.
+
+Primary reason buckets partition category records; WITHIN_WINDOW takes precedence.
+Older records with downstream DB references are also counted separately using FK
+relationships: observation/execution provenance, task-link evidence and automation
+activity. That dependency count overlaps primary reasons; do not sum it into totals.
+Candidate counts apply only to independently safe historical worker evidence under
+this proposed policy. They are not approval to delete anything. Future cleanup would
+need a separately reviewed design and fresh relationship/state checks; none exists
+here. No replay expiry, receipt tombstone or audit-erasure policy is assumed.
+
+Reporting boundaries:
+
+- Seven SQL categories return grouped counts/date ranges only, with source metadata
+  capped at 10,001 matching rows. At most 10,000 are analyzed per category. Larger
+  categories return complete=false, scannedAtLeast=10001 and null totals/ages/
+  candidate counts. This is a lower bound, not an estimate or sampled eligibility.
+- Representative worker ranking occurs only in the capped complete set. Incomplete
+  categories produce no cleanup conclusion; complete categories are still reports,
+  not actions. No overall storage-savings figure or sum of overlapping entities is
+  presented. The UI clearly marks incomplete and empty reports differently.
+- Queries use existing workspace/project/connection and FK indexes, bounded response
+  size, explicit SET TRANSACTION READ ONLY, RepeatableRead, 4-second per-statement
+  and 15-second transaction limits. These settings are transaction-local; they do
+  not save policy or mutate operational records. Planner/disk work can vary; local
+  EXPLAIN/runtime verification is still required. Timeout means report failure,
+  never a partial successful eligibility list.
+- Configuration, OAuth, webhook secrets, tasks, workflow definitions/revisions and
+  global credential rate-limit records are outside this operational-record report.
+  No connection, rule, receipt, activity or worker record is changed.
+
+Unit/DOM tests run with fixtures. Real PostgreSQL tests include exact cutoffs for
+all windows, provenance/reference preservation, old active/unresolved state,
+worker anchors (including future timestamps/older progress), scoped disconnected
+history, metadata overflow and a rejected write in an isolated read-only transaction.
+These database cases and browser screenshots remain unexecuted here; see
+VERIFICATION.md for actual results and safe Fedora commands. No live GitHub action
+or worker is needed to generate a report.

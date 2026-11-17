@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { openAppNavigation, submitRegistration, waitForWorkspace } from './helpers';
 import { healthFixture } from '../tests/github-health-fixture';
+import { retentionFixture } from '../tests/github-retention-fixture';
 
 test('administrator health is read-only, responsive and explicit about stale/error evidence', async ({
   page,
@@ -28,6 +29,7 @@ test('administrator health is read-only, responsive and explicit about stale/err
   let fail = false;
   const writes: string[] = [];
   let revalidations = 0;
+  let retentionReads = 0;
   await page.route('**/api/github**', async (route) => {
     const path = new URL(route.request().url()).pathname;
     if (path.endsWith('/revalidate') && route.request().method() === 'POST') {
@@ -48,6 +50,16 @@ test('administrator health is read-only, responsive and explicit about stale/err
     if (route.request().method() !== 'GET') {
       writes.push(path);
       return route.fulfill({ status: 405, json: { error: 'UI fixture forbids GitHub writes' } });
+    }
+    if (path.endsWith('/retention') && route.request().method() === 'GET') {
+      retentionReads++;
+      const days = Number(new URL(route.request().url()).searchParams.get('days')) as 7 | 30 | 90;
+      return route.fulfill({
+        json: {
+          ...retentionFixture(days),
+          scope: { workspaceId, projectId: project.id, archived: false },
+        },
+      });
     }
     if (path.endsWith('/health'))
       return route.fulfill({
@@ -122,5 +134,22 @@ test('administrator health is read-only, responsive and explicit about stale/err
   await expect(revalidation).toContainText('Repository access verified');
   await expect(revalidation).toContainText('Your OAuth account only');
   expect(revalidations).toBe(1);
+  expect(retentionReads).toBe(0);
+  const retention = page.getByRole('region', { name: 'Retention impact report', exact: true });
+  await retention.getByRole('button', { name: 'Generate read-only report', exact: true }).click();
+  await expect(retention).toContainText('No GitHub operational records');
+  expect(retentionReads).toBe(1);
+  for (const width of [1440, 1024, 768, 390]) {
+    await page.setViewportSize({ width, height: 900 });
+    await retention.scrollIntoViewIfNeeded();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(
+      true,
+    );
+    await page.screenshot({
+      path: test.info().outputPath(`retention-report-${width}.png`),
+      fullPage: true,
+    });
+  }
+
   expect(writes).toEqual([]); // No GitHub resource mutation, enrichment or retry requests.
 });

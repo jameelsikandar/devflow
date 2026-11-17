@@ -9,7 +9,8 @@ confirmed future-event status automation. Database/browser/live automation accep
 remains open in this sandbox. M3.5 step 2 adds durable worker signals and evidence classification; step 3 now
 provides administrator-only operational summary APIs. Step 4 prepares their
 display in the existing processing panel (committed e3f6ecf). Step 5 adds explicit
-connection diagnostics; later operational work remains pending. Step 2 migration verification remains unavailable in this sandbox.
+connection diagnostics (committed 09a32aa). Step 6 adds read-only retention reports;
+later operational work remains pending. Step 2 migration verification remains unavailable in this sandbox.
 This is **not a claim that the entire DevFlow 2.0 mission is finished**. The checklist
 in `UPGRADE_PLAN.md` records the remaining phases and open release gates.
 
@@ -1191,3 +1192,44 @@ isolated production build results/local commands are in VERIFICATION.md.
 Prepared commit: `feat(github): add explicit connection revalidation diagnostics`.
 No push, merge, worker start, live OAuth action, application migration, rule edit
 or DEV-002 change occurred. Stop for the owner commit before step 6.
+
+## M3.5 step 6 — proposed retention impact reports (2026-11-18)
+
+Confirmed clean feature branch at 09a32aa. Owner reports local revalidation and
+idle/unavailable monitoring accepted, with repository identity/automation unchanged.
+These owner observations are recorded separately from automated suite results.
+
+Added owner/admin project-scoped retention GET and an explicit report control in
+the existing GitHub processing panel. Proposed 7/30/90-day windows are ephemeral,
+not configuration changes. Reports contain counts, age ranges/bases, primary
+preservation reasons and overlapping downstream-reference counts for seven record
+categories. Processing state is part of delivery receipts, not a fabricated second
+queue table. Evidence ages use observation timestamps because evidence rows have
+no independent created timestamp. Current/disconnected connections are included.
+
+The conservative integrity policy preserves replay receipts, all provenance/task
+associations and execution/idempotency history. Pending/running/failed/unresolved
+records are not candidates. Only older terminal COMPLETED/STOPPED worker signals
+may qualify hypothetically, retaining the latest heartbeat/past evidence and latest
+poll/progress timestamps for each connection/mode. No cleanup approval or execution
+is provided, and no storage-savings estimate is invented.
+
+Queries use a consistent UTC DB clock/RepeatableRead snapshot and explicit read-only
+transaction, statement timeout and transaction timeout. Metadata is capped per
+category at 10,001 matched rows; over 10,000 returns incomplete/unknown counts and
+no eligibility conclusions for that category. The application never loads payloads
+or raw record lists into memory. Existing scoped/FK indexes support lookups; actual
+query plans/performance still need local PostgreSQL verification. No universal
+constant disk-scan cost is claimed. Timeouts fail safely without partial reports.
+
+441 unit/HTTP/DOM cases pass in 47 files (24 new: 13 service/policy, 3 route, 8 UI).
+Eleven PostgreSQL cases cover actual SQL boundaries/relationships, isolation,
+large-scope limits and read-only enforcement but are unexecuted. The extended
+Playwright journey discovers two cases only; screenshots/responsive acceptance
+remain pending. Exact static/build results are in VERIFICATION.md.
+
+No live connection, rule, task, DEV-002, webhook, worker, migration, retention data
+or external service action occurred. Source changes are only the read-only report,
+its panel integration, tests and documentation. Prepared commit:
+`feat(ops): add read-only retention impact reports`. Stop before step 7 pending
+owner commit confirmation; M3.5 acceptance remains open.

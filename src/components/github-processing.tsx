@@ -5,6 +5,7 @@ import { api, body } from '@/lib/client';
 import { Button } from './ui/button';
 import { GitHubOperationalHealth } from './github-operational-health';
 import { GitHubConnectionRevalidation } from './github-connection-revalidation';
+import { GitHubRetentionReport } from './github-retention-report';
 type Delivery = {
   id: string;
   event: string;
@@ -105,6 +106,7 @@ export function GitHubProcessing({
         connectionId={connectionId}
         admin={admin}
       />
+      <GitHubRetentionReport workspaceId={workspaceId} projectId={projectId} admin={admin} />
       {admin && connectionId && (
         <>
           {status.isPending && <p role="status">Loading processing status…</p>}

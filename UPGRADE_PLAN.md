@@ -1,11 +1,11 @@
 # DevFlow 2.0 upgrade
 
 Current implementation: M1, M2 and M3.1–M3.4. Current approved work: **M3.5 —
-operational acceptance and hardening**, step 5 (explicit GitHub connection revalidation diagnostics).
+operational acceptance and hardening**, step 6 (read-only retention impact reports).
 M3.5 is not complete. The current status and checklist below supersede older
 planning statements; dated results remain historical evidence, not fresh passes.
 
-## Current status — M3.5 step 5 (2026-11-17)
+## Current status — M3.5 step 6 (2026-11-18)
 
 The owner created `feat/m3-5-operational-readiness` from `48d7b5c` on clean `main`.
 The initial feature-branch check confirmed a clean working tree and empty index.
@@ -23,7 +23,10 @@ GitHub processing panel health display (committed e3f6ecf). The owner reports
 local migration/application schema current, healthy-idle UI with recent heartbeat/
 poll and zero pending/failed/dead-letter deliveries. That owner evidence does not
 replace unexecuted sandbox database/browser cases. Step 5 prepares explicit
-connection revalidation; no live revalidation was run here.
+connection revalidation (committed 09a32aa). The owner reports successful repository/
+admin-access revalidation and correct idle/unavailable monitoring with no retargeting
+or automation changes. That manual evidence is not an agent-executed database or
+browser suite. Step 6 prepares read-only retention impact reporting.
 
 M3.5 reuses the existing queue, workflow executor, task activity and administrator
 panels. Approved scope: lightweight PostgreSQL worker health, scoped operational
@@ -513,8 +516,8 @@ follows below. Unrelated actions/automation triggers remain excluded.
 ## M3.5 approved sequence and acceptance gates — 2026-11-15
 
 Step 1 documentation (f1a1a2b) and formatting cleanup (f101e28) were confirmed by
-the owner before step 2 began. Step 2 was confirmed as 8fbdc3e with a clean tree. Step 3 was confirmed as fb5d5b0 with a clean tree. Step 4 was confirmed as e3f6ecf with a clean tree. Step 5 is prepared for the
-owner's local commit. **Do not begin step 6 until that commit is confirmed.**
+the owner before step 2 began. Step 2 was confirmed as 8fbdc3e with a clean tree. Step 3 was confirmed as fb5d5b0 with a clean tree. Step 4 was confirmed as e3f6ecf with a clean tree. Step 5 was confirmed as 09a32aa with a clean tree. Step 6 is prepared for the
+owner's local commit. **Do not begin step 7 until that commit is confirmed.**
 
 | Step | Focused commit                                                    | State                                                   |
 | ---- | ----------------------------------------------------------------- | ------------------------------------------------------- |
@@ -522,8 +525,8 @@ owner's local commit. **Do not begin step 6 until that commit is confirmed.**
 | 2    | feat(ops): persist scoped worker health signals                   | Committed: 8fbdc3e; PostgreSQL evidence not supplied    |
 | 3    | feat(github): expose authorized operational health summaries      | Committed: fb5d5b0                                      |
 | 4    | feat(github): display operational health in existing panels       | Committed: e3f6ecf; owner reports local healthy-idle UI |
-| 5    | feat(github): add explicit connection revalidation diagnostics    | Prepared; owner commit and live check pending           |
-| 6    | feat(ops): add read-only retention impact reports                 | Pending                                                 |
+| 5    | feat(github): add explicit connection revalidation diagnostics    | Committed: 09a32aa; owner reports live read acceptance  |
+| 6    | feat(ops): add read-only retention impact reports                 | Prepared; PostgreSQL/browser gates unexecuted           |
 | 7    | test: cover operational failure and recovery journeys             | Pending                                                 |
 | 8    | chore: add isolated CI verification                               | Pending                                                 |
 | 9    | docs: publish M3.5 deployment and acceptance runbooks             | Pending                                                 |
@@ -541,7 +544,7 @@ amend, rebase, push or merge is authorized. Only the owner stages/commits locall
 - [x] Implement worker signal persistence/classification without misleading idle/bounded/unknown alerts (step 2 source; PostgreSQL acceptance pending).
 - [x] Add administrator-only operational summary reads (step 3 source; PostgreSQL verification blocked).
 - [x] Add explicit authorized connection diagnostics without silently mutating connections (step 5 source; real database/browser/live verification pending).
-- [ ] Add retention policy/dependency impact reporting without deletion or archival.
+- [x] Add proposed read-only retention/dependency impact reporting (step 6 source; PostgreSQL/browser gates unexecuted).
 - [ ] Add isolated CI and operational failure/recovery coverage; preserve replay,
       idempotency, authorization, task-version and lease-fencing guarantees.
 - [ ] Obtain actual passing isolated PostgreSQL and desktop/mobile browser evidence.
@@ -647,3 +650,28 @@ Unit/route/UI coverage and eight isolated PostgreSQL cases accompany this step.
 PostgreSQL, browser and live GitHub checks remain unexecuted in this sandbox;
 417 unit tests pass. Exact static/build results and local commands are in
 VERIFICATION.md. **Wait for owner commit confirmation before step 6.**
+
+### Step 6 — read-only retention impact reports (2026-11-18)
+
+Verified 09a32aa and a clean starting tree. The project-scoped administrator GET
+and existing-panel report compare proposed 7/30/90-day UTC windows. Seven metadata
+categories cover delivery/processing receipts, observations, current objects,
+task associations/evidence, automation executions and worker signals, including
+current and disconnected connections. Exact cutoff/future records are preserved.
+Replay receipts, immutable provenance, associations and execution/idempotency audit
+records never become age-only candidates. Active, failed and unresolved records
+are protected; superseded finished worker signals are the only potential candidates,
+with latest heartbeat/past evidence and last poll/progress anchors retained.
+
+No policy is saved. PostgreSQL transactions explicitly SET TRANSACTION READ ONLY,
+with RepeatableRead, 4-second statement and 15-second transaction bounds. Each
+category caps matched metadata at 10,001 rows; over 10,000 means incomplete with
+unknown totals/ages/candidates, not a sampled count. Payloads and credentials are
+not selected or loaded into Node. Dependencies are aggregate EXISTS checks, not
+record exports. No deletion, archive, cleanup scheduler, external request, schema
+migration or domain mutation is introduced. Endpoint and UI remain admin-only.
+
+441 unit tests pass in 47 files; 11 PostgreSQL cases and the extended browser
+journey remain unexecuted here. Exact static/build/format results and local commands
+are in VERIFICATION.md. Potential candidates are not deletion authorization.
+**Wait for owner commit confirmation before step 7.**

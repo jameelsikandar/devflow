@@ -1,3 +1,4 @@
+import { githubRetentionImpact } from '@/lib/server/github-retention';
 import { revalidateGitHubConnection } from '@/lib/server/github-revalidation';
 import { githubOperationalHealth } from '@/lib/server/github-operational-health';
 import { NextResponse } from 'next/server';
@@ -85,6 +86,7 @@ const activityInclude = { actor: { select: personSelect } };
 async function handler(request: Request, { params }: { params: Promise<{ path: string[] }> }) {
   let operationalHealthRead = false;
   let connectionRevalidation = false;
+  let retentionRead = false;
   try {
     const { path } = await params;
     operationalHealthRead =
@@ -99,6 +101,12 @@ async function handler(request: Request, { params }: { params: Promise<{ path: s
       path[1] === 'repositories' &&
       path[3] === 'revalidate' &&
       request.method === 'POST';
+    retentionRead =
+      path.length === 4 &&
+      path[0] === 'github' &&
+      path[1] === 'projects' &&
+      path[3] === 'retention' &&
+      request.method === 'GET';
     // Recognize diagnostic responses for no-store, then enforce origin before auth/body/DB work.
     guardOrigin(request);
     const route = path.join('/');
@@ -561,6 +569,11 @@ async function handler(request: Request, { params }: { params: Promise<{ path: s
         headers: { 'Cache-Control': 'no-store' },
       });
     }
+    if (retentionRead)
+      return NextResponse.json(
+        await githubRetentionImpact(actor, path[2], url.searchParams.get('days') ?? undefined),
+        { headers: { 'Cache-Control': 'no-store' } },
+      );
     if (operationalHealthRead)
       return NextResponse.json(await githubOperationalHealth(actor, path[2]), {
         headers: { 'Cache-Control': 'no-store' },
@@ -725,7 +738,7 @@ async function handler(request: Request, { params }: { params: Promise<{ path: s
     throw new HttpError(404, 'Endpoint not found');
   } catch (error) {
     const response = errorResponse(error);
-    if (operationalHealthRead || connectionRevalidation)
+    if (operationalHealthRead || connectionRevalidation || retentionRead)
       response.headers.set('Cache-Control', 'no-store');
     return response;
   }
