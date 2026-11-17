@@ -264,7 +264,11 @@ function TaskCardContent({ task, hideNumber = false }: { task: Task; hideNumber?
           <span
             className="tag"
             key={l.label.id}
-            style={{ color: l.label.color, background: `${l.label.color}13` }}
+            style={{
+              color: 'var(--text)',
+              background: `${l.label.color}13`,
+              borderInlineStart: `2px solid ${l.label.color}`,
+            }}
           >
             {l.label.name}
           </span>

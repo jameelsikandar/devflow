@@ -19,7 +19,7 @@
 }
 .github-operational-health p,
 .github-operational-health li {
-  font-size: 12px;
+  font-size: var(--font-size-description);
   line-height: 1.6;
   color: var(--secondary);
 }
@@ -31,7 +31,7 @@
   padding: 3px 8px;
   border-radius: 5px;
   background: var(--surface-raised);
-  font-size: 12px;
+  font-size: var(--font-size-metadata);
 }
 .github-health-badge[data-tone='healthy'] {
   color: var(--green);
@@ -49,14 +49,14 @@
   border-radius: 8px;
 }
 .github-health-metrics h5 {
-  font-size: 12px;
+  font-size: var(--font-size-subheading);
 }
 .github-health-metrics dl,
 .github-health-times {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 6px 12px;
-  font-size: 12px;
+  font-size: var(--font-size-description);
 }
 .github-health-metrics dt,
 .github-health-times dt {
@@ -73,7 +73,7 @@
 }
 .github-operational-health summary {
   cursor: pointer;
-  font-size: 12px;
+  font-size: var(--font-size-description);
   color: var(--secondary);
 }
 .github-operational-health summary:focus-visible {
@@ -87,5 +87,5 @@
 }
 .github-operational-health .github-health-note,
 .github-operational-health .github-health-asof {
-  font-size: 11px;
+  font-size: var(--font-size-metadata);
 }

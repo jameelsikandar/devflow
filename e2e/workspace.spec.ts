@@ -29,6 +29,10 @@ test('register, plan a roadmap, move a task, comment, search and sign out', asyn
   await page.getByRole('button', { name: 'New task', exact: true }).click();
   dialog = page.getByRole('dialog');
   await dialog.getByLabel('Title', { exact: true }).fill('Build the first release');
+  await expect(dialog.getByLabel('Title', { exact: true })).toHaveCSS(
+    'font-size',
+    testInfo.project.name === 'mobile' ? '16px' : '14px',
+  );
   await dialog.getByRole('combobox', { name: 'Priority', exact: true }).selectOption('HIGH');
   await expect(dialog.getByRole('combobox', { name: 'Assignee', exact: true })).toHaveValue('');
   await dialog.getByRole('button', { name: /Create task/ }).click();
@@ -54,6 +58,8 @@ test('register, plan a roadmap, move a task, comment, search and sign out', asyn
   };
   await navigate('Roadmap');
   await expect(page.getByRole('heading', { name: 'Task schedule', exact: true })).toBeVisible();
+  await expect(page.locator('.roadmap-row').first()).toHaveCSS('height', '54px');
+  await expect(page.locator('.roadmap-task-label strong').first()).toHaveCSS('font-size', '15px');
   await page.locator('.roadmap-task-label').filter({ hasText: 'Build the first release' }).click();
   await page.getByLabel('Start date (UTC)', { exact: true }).fill('2026-11-01');
   await page.getByLabel('Due date (UTC)', { exact: true }).fill('2026-11-03');
@@ -144,6 +150,8 @@ test('register, plan a roadmap, move a task, comment, search and sign out', asyn
   await expect(page.getByLabel('Due date (UTC)', { exact: true })).toHaveValue('2026-11-08');
   await expect(page.getByLabel('Mark as a milestone')).toBeChecked();
   await navigate('Board');
+  await expect(page.locator('.task-card h3').first()).toHaveCSS('font-size', '15px');
+  await expect(page.locator('.task-number').first()).toHaveCSS('font-size', '12px');
   await expect(page.getByRole('button', { name: /Build the first release/ })).toBeVisible();
   await navigate('Analytics');
   await expect(

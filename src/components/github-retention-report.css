@@ -9,7 +9,7 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
+  font-size: var(--font-size-control);
   color: var(--secondary);
 }
 .github-retention-table-wrap {
@@ -28,7 +28,7 @@
   width: 100%;
   min-width: 690px;
   border-collapse: collapse;
-  font-size: 12px;
+  font-size: var(--font-size-description);
   text-align: left;
 }
 .github-retention-table caption {

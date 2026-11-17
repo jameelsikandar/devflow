@@ -126,6 +126,13 @@ test('administrator health is read-only, responsive and explicit about stale/err
       await expect(
         health.getByRole('button', { name: 'Refresh operational health' }),
       ).toBeVisible();
+      await expect(page.locator('body')).toHaveCSS('font-size', '15px');
+      await expect(page.locator('.nav-item').first()).toHaveCSS('font-size', '14px');
+      await expect(health.locator('p').first()).toHaveCSS('font-size', '13px');
+      await expect(health.getByRole('button', { name: 'Refresh operational health' })).toHaveCSS(
+        'font-size',
+        '14px',
+      );
       expect(
         await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1),
       ).toBe(true);
@@ -134,6 +141,25 @@ test('administrator health is read-only, responsive and explicit about stale/err
         fullPage: true,
       });
     }
+  }
+  // Text resizing is distinct from native browser zoom. Verify rem-based text
+  // scales without a forced pixel root; screenshots remain local test artifacts.
+  await page.setViewportSize({ width: 390, height: 900 });
+  try {
+    await page.evaluate(() => {
+      document.documentElement.style.fontSize = '200%';
+    });
+    await expect(health.locator('p').first()).toHaveCSS('font-size', '26px');
+    await health.getByRole('button', { name: 'Refresh operational health' }).focus();
+    await expect(health.getByRole('button', { name: 'Refresh operational health' })).toBeFocused();
+    await page.screenshot({
+      path: test.info().outputPath('github-health-text-resize-200.png'),
+      fullPage: true,
+    });
+  } finally {
+    await page.evaluate(() => {
+      document.documentElement.style.removeProperty('font-size');
+    });
   }
   const refresh = health.getByRole('button', { name: 'Refresh operational health' });
   await refresh.focus();

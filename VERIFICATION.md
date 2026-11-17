@@ -1,6 +1,48 @@
 # DevFlow local verification
 
-## Current change — M3.5 step 9: deployment and acceptance runbooks (2026-11-18)
+## Current change — global typography and readability
+
+Branch style/global-typography-readability was verified clean at b92712e before
+edits. This branch is based on the committed M3.5 runbooks; no M3.5 commit was
+rewritten. See [TYPOGRAPHY.md](TYPOGRAPHY.md) for the before/after scale, semantic
+color/layout decisions and exact Fedora/browser acceptance procedure.
+
+Presentation only: eight stylesheets, Recharts presentation and Kanban label style;
+nine typography/palette/SSR regressions and existing desktop/mobile browser assertions.
+No backend, schema, auth logic, data, GitHub API behavior, rules or DEV-002 changed.
+New sizes: body/task 15px; navigation/buttons 14px; descriptions 13px; metadata 12px;
+section hierarchy 16–20px, existing larger headings retained. Units are rem, the
+font family/root preference stays unchanged and mobile inputs use 16px. Palette
+contrast checks cover 84 semantic foreground/surface pairs plus button states;
+passing palette math is not full rendered WCAG/visual acceptance.
+
+| Check                  | Actual result                                                                                                                                                               |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Full unit/HTTP/DOM     | AI_API_KEY= GITHUB_CLIENT_ID= GITHUB_CLIENT_SECRET= node_modules/.bin/vitest run --pool=forks: **485 passed / 50 files**, including nine new typography cases               |
+| Full/core TypeScript   | node_modules/.bin/tsc --noEmit --pretty false; node_modules/.bin/tsc --noEmit -p tsconfig.core.json --pretty false: passed                                                  |
+| ESLint                 | node_modules/.bin/eslint .: passed                                                                                                                                          |
+| Formatting/whitespace  | node_modules/.bin/prettier --check .; git diff --check: passed                                                                                                              |
+| Production             | Installed Next next build --webpack in credential-free source snapshot: passed                                                                                              |
+| Playwright             | Focused chromium/mobile health/workspace invocation: server exited 1 before assertions; separate loopback bind probe returned EPERM; **zero browser tests executed/passed** |
+| Visual/native zoom     | Connected browser host unavailable; no screenshots or rendered acceptance performed                                                                                         |
+| PostgreSQL integration | Not rerun for presentation-only changes; prior owner **124/124** remains separate evidence                                                                                  |
+
+Build copy: /tmp/devflow-typography-verify-9ii7xq1k, source without private .env or
+generated files, linked installed dependencies. Build used blank AI/GitHub client
+keys, APP_URL=http://localhost:3000, disabled telemetry and unreachable placeholder
+DB/AI endpoints. Application .next was not overwritten. Logs: /tmp/devflow-typography-unit.log,
+/tmp/devflow-typography-build.log, /tmp/devflow-typography-e2e.log. Browser attempt
+used only an explicit devflow_test URL and no live credentials; server could not
+bind/start, so no fixture or application SQL was performed. No live provider requests.
+
+Unexecuted browser additions check computed fonts, long-view responsive overflow,
+roadmap fixed geometry and text-resize keyboard access. Text resizing is not native
+browser zoom. Required actual inspection: dark/light at 1440, 1024, 768 and 390px,
+plus native zoom/reflow and existing drag/dialog/AI interactions. These remain open;
+no visual claim follows from CSS parsing or compilation. Follow TYPOGRAPHY.md.
+Stop after review handoff; commit only in the owner's Fedora terminal after review.
+
+## Historical change — M3.5 step 9: deployment and acceptance runbooks (2026-11-18)
 
 Verified ecee52a on feat/m3-5-operational-readiness and a clean tree/index before
 editing. This step changes documentation only: README, the four milestone guides
