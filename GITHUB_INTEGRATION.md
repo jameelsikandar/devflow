@@ -8,16 +8,16 @@ M3.4 now adds explicitly confirmed future-event status automation. Its latest
 section below supersedes earlier preview-only deployment notes. Existing OAuth,
 repository browsing, commit history and open-PR reads are retained.
 
-## Current operational status — M3.5 step 7
+## Current operational status — M3.5 step 8
 
 M3.1–M3.4 source is implemented. M3.5 is approved for operational acceptance and
 hardening. Baseline documentation and formatting cleanup are committed; this
-change adds failure/recovery regression journeys for the committed operational
-features (coverage index at the end).
+change adds isolated CI verification for the committed operational features.
+Step 7 recovery journeys are committed as df10219 (coverage index below).
 Existing processing controls, task links, previews and confirmed PR automation retain
 their current behavior. Owner-local PostgreSQL through Step 6 passed 117/117
-in 10 files; new recovery database/browser verification, CI and final runbooks remain
-open. The owner reports healthy-idle/unavailable monitoring and successful
+in 10 files; the owner separately passed six recovery-file cases. Updated full
+database/browser verification, hosted CI and final runbooks remain open. The owner reports healthy-idle/unavailable monitoring and successful
 live access revalidation; sandbox PostgreSQL/browser verification remains open. The baseline ledger is historical; the step 2 section
 at the end records the current implementation and unverified database gate;
 earlier phase sections remain historical implementation/setup records.
@@ -1192,3 +1192,25 @@ No worker/runtime/API/schema code was changed for Step 7: focused failure tests
 passed against the existing safeguards. Run the updated isolated DB and browser
 commands in VERIFICATION.md before closing their new gates. No live retry, rule
 change, credential revocation or service restart was performed by the agent.
+
+## M3.5 step 8 — isolated verification pipeline
+
+.github/workflows/ci.yml verifies ordinary PRs and conventional branch pushes on a
+fresh GitHub-hosted Ubuntu runner. It uses ephemeral PostgreSQL 16 / devflow_test;
+no OAuth, webhook, AI, deployment or environment secrets are configured or needed.
+Existing provider tests inject mocks. Worker code is compiled, never started.
+Database tests may create enabled automation **fixtures only in devflow_test**;
+they never change real rules, connections, tasks or DEV-002.
+
+The CI-only scripts/ci-verification.ts checks the hosted runner and exact database
+URLs before migration deployment or integration execution. DATABASE_URL otherwise
+points to an unreachable loopback port with a distinct sentinel database name.
+There is no reference to local port 5433, production, hosted databases, environment
+files or backup data. No reset/reseed/cleanup command or persistent volume is used.
+PostgreSQL service credentials are public, disposable fixture values.
+
+See VERIFICATION.md → M3.5 Step 8 for workflow stages, package/action pins, cache
+scope, failure handling, Fedora commands and troubleshooting. Passing local checks
+or workflow parsing is not hosted CI acceptance. Hosted runs, browser gates and
+required live operational acceptance remain pending; no push or live action was
+performed during implementation. Step 9 awaits the owner's Step 8 commit confirmation.

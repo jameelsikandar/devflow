@@ -1,11 +1,11 @@
 # DevFlow 2.0 upgrade
 
 Current implementation: M1, M2 and M3.1–M3.4. Current approved work: **M3.5 —
-operational acceptance and hardening**, step 7 (operational failure and recovery journeys).
+operational acceptance and hardening**, step 8 (isolated CI verification).
 M3.5 is not complete. The current status and checklist below supersede older
 planning statements; dated results remain historical evidence, not fresh passes.
 
-## Current status — M3.5 step 7 (2026-11-18)
+## Current status — M3.5 step 8 (2026-11-18)
 
 The owner created `feat/m3-5-operational-readiness` from `48d7b5c` on clean `main`.
 The initial feature-branch check confirmed a clean working tree and empty index.
@@ -28,8 +28,9 @@ admin-access revalidation and correct idle/unavailable monitoring with no retarg
 or automation changes. That manual evidence is not an agent-executed database or
 browser suite. Step 6 is committed as 1373a87. At this handoff the owner reports
 117/117 isolated PostgreSQL tests passing across 10 files and working retention
-reports. Step 7 adds recovery regressions; its new PostgreSQL cases and browser
-execution are not covered by that earlier run.
+reports. Step 7 is committed as df10219. The owner separately reports 6/6
+recovery-file database cases passed; the earlier 117-case run is not a full updated
+suite result. Step 8 adds isolated CI; hosted CI and browser acceptance remain open.
 
 M3.5 reuses the existing queue, workflow executor, task activity and administrator
 panels. Approved scope: lightweight PostgreSQL worker health, scoped operational
@@ -519,8 +520,8 @@ follows below. Unrelated actions/automation triggers remain excluded.
 ## M3.5 approved sequence and acceptance gates — 2026-11-15
 
 Step 1 documentation (f1a1a2b) and formatting cleanup (f101e28) were confirmed by
-the owner before step 2 began. Step 2 was confirmed as 8fbdc3e with a clean tree. Step 3 was confirmed as fb5d5b0 with a clean tree. Step 4 was confirmed as e3f6ecf with a clean tree. Step 5 was confirmed as 09a32aa with a clean tree. Step 6 was confirmed as 1373a87 with a clean tree. Step 7 is prepared for the
-owner's local commit. **Do not begin step 8 until that commit is confirmed.**
+the owner before step 2 began. Step 2 was confirmed as 8fbdc3e with a clean tree. Step 3 was confirmed as fb5d5b0 with a clean tree. Step 4 was confirmed as e3f6ecf with a clean tree. Step 5 was confirmed as 09a32aa with a clean tree. Step 6 was confirmed as 1373a87 with a clean tree. Step 7 was confirmed as df10219 with a clean tree. Step 8 is prepared for the
+owner's local commit. **Do not begin step 9 until that commit is confirmed.**
 
 | Step | Focused commit                                                    | State                                                   |
 | ---- | ----------------------------------------------------------------- | ------------------------------------------------------- |
@@ -530,8 +531,8 @@ owner's local commit. **Do not begin step 8 until that commit is confirmed.**
 | 4    | feat(github): display operational health in existing panels       | Committed: e3f6ecf; owner reports local healthy-idle UI |
 | 5    | feat(github): add explicit connection revalidation diagnostics    | Committed: 09a32aa; owner reports live read acceptance  |
 | 6    | feat(ops): add read-only retention impact reports                 | Committed: 1373a87; owner DB 117/117, browser pending   |
-| 7    | test: cover operational failure and recovery journeys             | Prepared; new DB/browser gates pending                  |
-| 8    | chore: add isolated CI verification                               | Pending                                                 |
+| 7    | test: cover operational failure and recovery journeys             | Committed: df10219; owner recovery file 6/6             |
+| 8    | chore: add isolated CI verification                               | Implemented; hosted execution pending                   |
 | 9    | docs: publish M3.5 deployment and acceptance runbooks             | Pending                                                 |
 
 Relevant tests accompany each functional step; discovered defects get their own
@@ -548,7 +549,7 @@ amend, rebase, push or merge is authorized. Only the owner stages/commits locall
 - [x] Add administrator-only operational summary reads (step 3 source; PostgreSQL verification blocked).
 - [x] Add explicit authorized connection diagnostics without silently mutating connections (step 5 source; real database/browser/live verification pending).
 - [x] Add proposed read-only retention/dependency impact reporting (step 6 source; PostgreSQL/browser gates unexecuted).
-- [ ] Add isolated CI and operational failure/recovery coverage; preserve replay,
+- [x] Add isolated CI and operational failure/recovery coverage; preserve replay,
       idempotency, authorization, task-version and lease-fencing guarantees.
 - [ ] Obtain actual passing isolated PostgreSQL and desktop/mobile browser evidence.
 - [ ] Obtain separately authorized owner-run live evidence for new-event execution,
@@ -702,3 +703,30 @@ PostgreSQL telemetry is explicitly flushed in controlled test callbacks rather
 than waiting for wall-clock ticks; timer/coalescing behavior is exercised separately
 with fake timers. See GITHUB_INTEGRATION.md coverage index and VERIFICATION.md.
 **Wait for owner commit confirmation before step 8.** M3.5 remains open.
+
+### Step 8 — isolated CI verification (2026-11-18)
+
+Verified df10219 on feat/m3-5-operational-readiness with a clean tree/index.
+The owner confirmed six passing operational-recovery integration tests. The prior
+wording “seven added cases” describes six in that file plus one cooldown case
+appended to github-revalidation.integration.test.ts; it never meant seven in the
+recovery file. Current discovery: 124 cases / 11 files, **not execution**. The
+117/117 baseline predates those seven additions; do not combine separate runs into
+a claimed updated full-suite pass.
+
+- [x] Add ordinary PR and main/conventional feature-branch push verification.
+- [x] Pin actions by commit, Node/pnpm versions and frozen lockfile installation;
+      cache only the downloaded pnpm store with a lockfile/build-policy key.
+- [x] Use ephemeral PostgreSQL 16, loopback-only devflow_test, a deliberately
+      unreachable application sentinel and a fail-closed CI database wrapper.
+- [x] Configure CI stages for schema/client, full/core types, lint, formatting,
+      worker compilation, mocked-provider unit/HTTP/DOM tests, real PostgreSQL
+      integration and webpack; hosted execution remains pending.
+- [x] Test guard rejection, subprocess failures and workflow security/check contract.
+- [ ] Execute GitHub-hosted CI after separately authorized push; record run URL/SHA.
+- [ ] Execute desktop/mobile browser gates; this CI step does not replace them.
+
+No application/schema changes, migration application, database setup/reset/seed,
+live worker, live provider calls or repository writes occurred in this step. See
+VERIFICATION.md for exact results and CI troubleshooting. **Wait for owner commit
+confirmation before step 9.** M3.5 remains open until required acceptance evidence.

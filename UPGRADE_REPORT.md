@@ -10,8 +10,10 @@ remains open in this sandbox. M3.5 step 2 adds durable worker signals and eviden
 provides administrator-only operational summary APIs. Step 4 prepares their
 display in the existing processing panel (committed e3f6ecf). Step 5 adds explicit
 connection diagnostics (committed 09a32aa). Step 6 adds read-only retention reports;
-later operational work remains pending. The owner reports 117/117 isolated database
-tests through Step 6; fresh Step 7 database/browser verification remains open.
+Step 7 recovery regressions are committed as df10219, with owner-reported 6/6
+recovery-file PostgreSQL passes. The earlier 117/117 full database baseline is
+separate. Step 8 adds isolated CI; hosted CI, updated full database and browser
+verification remain open.
 This is **not a claim that the entire DevFlow 2.0 mission is finished**. The checklist
 in `UPGRADE_PLAN.md` records the remaining phases and open release gates.
 
@@ -1272,3 +1274,45 @@ and safe local DB/browser commands are in VERIFICATION.md. Seven added PostgreSQ
 cases are unexecuted here; browser discovery is two cases, not execution or screenshots.
 Prepared commit: `test: cover operational failure and recovery journeys`.
 Stop before Step 8 until the owner confirms the local commit. M3.5 is not complete.
+
+## M3.5 step 8 — isolated CI verification (2026-11-18)
+
+Added .github/workflows/ci.yml for ordinary pull requests and pushes to main plus
+feat/fix/chore/refactor/test/docs branches. Uses a GitHub-hosted Ubuntu 24.04 runner,
+Node 22.23.1, pnpm 11.9.0, existing frozen lockfile/build allowlist and a pnpm download
+store cache. All four action dependencies are commit-pinned. Token permissions are
+contents:read only; checkout does not persist credentials. No deployment, live
+provider secrets, webhook registration, worker startup or cleanup execution exists.
+
+A PostgreSQL 16 service owns only ephemeral devflow_test. scripts/ci-verification.ts
+requires GitHub-hosted CI and exact loopback service/sentinel URLs before spawning
+migration deployment or integration tests. It reuses the existing test-database
+name guard, rejects query/host overrides and never falls back to application URLs.
+Migration child receives only the service database target; integration retains the
+two-name guard before switching to devflow_test. Failures/signals are nonzero;
+no reset, push, seed or destructive migration command is used. Provider credentials
+are blank; provider behavior uses existing fixture mocks. Public CI fixture passwords
+are disposable service values, not repository secrets or developer credentials.
+
+CI requires Prisma validation/generation/migration deployment, formatting, ESLint,
+core types, worker compilation, unit/HTTP/DOM regressions, PostgreSQL integration,
+webpack build and full types including generated route types. Nothing is allowed to
+continue after a failed gate. Cache never includes .env, database data, .next,
+compiled workers, node_modules or test artifacts. New tests exercise the database
+boundary and parse the workflow using ESLint's already installed locked YAML parser;
+no dependencies or lockfile changes are needed.
+
+Sandbox result: **476 unit/HTTP/DOM cases passed, 49 files, including 22 CI cases**;
+full/core types, ESLint, formatting, Prisma validation/generation, worker compilation
+and credential-free isolated webpack build passed. Exact commands and limitations
+are in VERIFICATION.md. PostgreSQL TCP probe returned EPERM; SQL tests were not run.
+Integration discovery found 124 cases / 11 files; that is not a pass. GitHub-hosted
+execution, fresh dependency installation/cache behavior there and browser execution
+remain unverified. No workflow was pushed or triggered.
+
+Count reconciliation: Step 7 added six cases in github-operational-recovery and
+one in github-revalidation. The owner's new 6/6 result covers the former only;
+the earlier 117/117 full suite is an independent pre-addition baseline. No seventh
+case is missing from recovery discovery and no updated full-suite pass is inferred.
+Prepared commit: chore: add isolated CI verification. Wait for owner confirmation
+before Step 9. M3.5 is not complete.

@@ -1,6 +1,156 @@
 # DevFlow local verification
 
-## Current change — M3.5 step 7: failure/recovery journeys (2026-11-18)
+## Current change — M3.5 step 8: isolated CI verification (2026-11-18)
+
+Confirmed df10219 on feat/m3-5-operational-readiness with a clean working tree and
+index before edits. No application source/schema/lockfile change, migration
+application, worker start or live provider operation was performed.
+
+### Evidence reconciliation
+
+Owner-reported Step 6 full PostgreSQL baseline: **117/117 across 10 files**.
+Owner-reported Step 7 operational recovery file: **6/6 passed**. Inspection and
+Vitest discovery confirm six cases in github-operational-recovery.integration.test.ts,
+plus one Step 7 addition in github-revalidation.integration.test.ts (cooldown expiry
+and an explicit subsequent check). Thus the historical “seven new cases” refers to
+two files, not seven recovery-file cases. The extra cooldown case is not established
+as passed by the six-case owner result. Current full discovery is **124 cases across
+11 files**; no updated full PostgreSQL pass is inferred from discovery or arithmetic.
+
+### CI workflow and isolation
+
+.github/workflows/ci.yml runs on ordinary pull requests (including fork PRs) and
+pushes to main and feat/fix/chore/refactor/test/docs branch prefixes. No
+pull_request_target, deployment, schedule, live event or workflow-writing token is
+used. Concurrency cancels superseded runs for the same workflow/ref; a cancelled
+run is not a pass. Token permissions are contents:read, all actions are pinned to
+reviewed release commit SHAs and checkout has persist-credentials:false.
+
+A fresh GitHub-hosted ubuntu-24.04 runner uses Node 22.23.1 and package.json's
+pnpm 11.9.0. Install is pnpm install --frozen-lockfile with the existing
+pnpm-workspace.yaml build allowlist. Only the pnpm download store is cached; its
+exact key includes runner OS, Node/pnpm major and hashes of the lockfile and build
+policy. No .env, node_modules, generated Prisma/.next/.worker, reports, credentials
+or database volumes are cached. Dependency installation and the public action/image
+pulls need registry/network availability; this is separate from live provider access.
+
+The postgres:16 service exposes only 127.0.0.1:5432 and creates devflow_test with a
+health check. Its public ci_fixture_only password is a throwaway CI fixture, never
+a repository secret or production credential. There is no persistent volume, dump
+restore or application database. A deliberately unreachable DATABASE_URL at
+127.0.0.1:1/devflow_ci_unused is the default for non-integration checks/builds.
+TEST_DATABASE_URL is the exact loopback service devflow_test URL.
+
+scripts/ci-verification.ts refuses migration/integration commands unless CI,
+GITHUB_ACTIONS and RUNNER_ENVIRONMENT indicate a GitHub-hosted run and **both**
+URLs exactly match the service/sentinel contract. This prevents accidental local,
+self-hosted, hosted-database and query-parameter routing; it is a configuration
+safety guard, not a security boundary against malicious repository code. It also
+reuses requireTestDatabase's distinct-name/\_test guard. Migration deployment alone
+receives DATABASE_URL=devflow_test. Integration keeps both names distinct so the
+existing Vitest config can validate and then select devflow_test before loading
+fixtures. No fallback/reset/seed/db-push is allowed. Subprocess errors/signals and
+nonzero exits fail the job; diagnostics do not print configured URLs or thrown errors.
+
+Required stages: frozen install; Prisma validation/generation; guarded migrate
+deploy; Prettier; ESLint; core types; worker compilation only; unit/HTTP/DOM tests
+with forks; guarded real PostgreSQL integration; webpack production build; full
+types including generated Next.js route types. No continue-on-error is permitted.
+GitHub/AI client keys are blank and AI_BASE_URL is an unreachable loopback fixture;
+existing tests inject provider responses. No live worker or credential-dependent
+acceptance is run. Browser acceptance remains a separate gate; Step 8 does not add
+Playwright installation/execution or claim that DOM unit tests replace browsers.
+
+Reviewed upstream references for maintenance: [setup-node](https://github.com/actions/setup-node),
+[pnpm/action-setup v4.2.0 inputs](https://github.com/pnpm/action-setup/blob/v4.2.0/action.yml),
+[GitHub runner environment variables](https://docs.github.com/en/actions/reference/workflows-and-actions/variables).
+Update pins deliberately alongside packageManager/Node and CI contract tests.
+
+### Actual sandbox verification
+
+| Check                 | Actual command / result                                                                                                                                      |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Unit/HTTP/DOM         | AI_API_KEY= GITHUB_CLIENT_ID= GITHUB_CLIENT_SECRET= node_modules/.bin/vitest run --pool=forks: **476 passed, 49 files, 0 failed**, including 22 new CI cases |
+| Full/core types       | node_modules/.bin/tsc --noEmit --pretty false; node_modules/.bin/tsc --noEmit -p tsconfig.core.json --pretty false: passed                                   |
+| Post-build full types | Same full check in the build source snapshot after Next route type generation: passed                                                                        |
+| ESLint                | node_modules/.bin/eslint .: passed                                                                                                                           |
+| Schema/client         | DATABASE_URL=non-live-placeholder node_modules/.bin/prisma validate and prisma generate: passed; no migration or SQL                                         |
+| Worker                | node_modules/.bin/tsc -p tsconfig.worker.json --pretty false: passed; no worker started                                                                      |
+| Formatting            | node_modules/.bin/prettier --check . and git diff --check: passed                                                                                            |
+| Production            | node_modules/.bin/next build --webpack in credential-free source snapshot: passed                                                                            |
+| CLI rejection         | CI=false GITHUB_ACTIONS=false node --import tsx scripts/ci-verification.ts migrate: refused with exit 1 before spawning Prisma, as intended                  |
+| PostgreSQL            | Loopback 127.0.0.1:5433 TCP probe returned EPERM. SQL integration/migration execution **not performed**; no connection retries/workarounds                   |
+| Integration discovery | vitest list --config vitest.integration.config.ts --json: **124 discovered / 11 files**, zero SQL assertions executed; not passes                            |
+| Hosted workflow       | **Not run**: no push or remote action authorized; fresh install, cache, service/migration/job acceptance await an actual run                                 |
+| Browser/live services | **Not executed** in this step; no browser/screenshot or real GitHub/Groq acceptance claimed                                                                  |
+
+Initial focused test run caught a comment-sensitive secret-reference assertion;
+it now checks parsed YAML. Full types caught a missing NODE_ENV in the test-only
+environment fixture; corrected before the final passing run. Production source
+needed no change. YAML contract parsing reuses ESLint's installed, lockfile-resolved
+js-yaml dependency; no new package was installed. This checks local syntax and
+security requirements, not GitHub's hosted workflow execution.
+
+Build snapshot: /tmp/devflow-m35-ci-build-8rpnwaci. Copied tracked/new source without
+private .env or generated files and linked existing installed dependencies.
+Build used blank AI/GitHub client keys, unreachable AI_BASE_URL and DATABASE_URL
+at 127.0.0.1:1/devflow_build_test, APP_URL=http://localhost:3000 and disabled Next
+telemetry. Existing application .next/dev output was not altered. Logs:
+/tmp/devflow-m35-ci-unit.log and /tmp/devflow-m35-ci-build.log. Integration discovery:
+/tmp/devflow-m35-ci-integration-discovery.json. These temporary artifacts are not committed.
+
+### Fedora verification and CI troubleshooting
+
+Use the existing migrated isolated database. Do not run the CI-only wrapper locally
+or spoof its hosted flags; no new migration is needed for Step 8. Stop at a failed
+safety guard, and never substitute the application URL as the test URL.
+
+```bash
+node --import tsx <<'NODE'
+require('dotenv/config');
+const { requireTestDatabase } = require('./tests/database-config.ts');
+const target = requireTestDatabase(process.env.DATABASE_URL, process.env.TEST_DATABASE_URL);
+if (target.pathname !== '/devflow_test') throw Error('Only devflow_test permitted');
+console.log('Verified isolated test target', target.hostname, target.port, target.pathname);
+NODE
+# Continue only after successful guard. No reset, seed or migration is needed here.
+AI_API_KEY= GITHUB_CLIENT_ID= GITHUB_CLIENT_SECRET= pnpm test:integration
+AI_API_KEY= GITHUB_CLIENT_ID= GITHUB_CLIENT_SECRET= pnpm exec vitest run --pool=forks
+pnpm typecheck
+pnpm typecheck:core
+pnpm lint
+pnpm format:check
+pnpm exec prisma validate
+pnpm github:worker:build
+# Stop the dev server or build a separate source checkout to avoid sharing .next.
+pnpm build:webpack
+```
+
+For hosted CI, after separately approving and performing a push, inspect the
+**Isolated verification / Types, tests and production build** run. Record its URL,
+commit SHA, runner versions and actual test totals before claiming acceptance.
+No repository/environment secrets need configuration. Do not add production secrets
+to make tests pass. Branch protection/required checks are not configured by this step.
+
+- Service unhealthy: inspect the ephemeral postgres container health log in the job;
+  verify the service database/user/port. Never point CI at another database.
+- Guard failure: compare only the checked-in public service/sentinel configuration
+  and hosted runner type. Do not relax the guard or introduce secret URL overrides.
+- Locked install/build-script failure: reconcile packageManager, lockfile and
+  allowBuilds intentionally; do not use --no-frozen-lockfile or approve arbitrary scripts.
+- Cache/registry outage: rerun after availability recovers; there is no broad restore
+  key or build-artifact cache. A cache miss performs a normal frozen installation.
+- Migration/schema error: retain the failed log and fix/rehearse a forward migration;
+  never reset/reseed, edit applied migration history or target the application database.
+- Unit/integration/type/build failure: reproduce the named stage locally using mocks
+  and devflow_test. Connection-hook skips/failures are not passing SQL assertions.
+- Browser/live acceptance: still requires the separate authorized procedures; no
+  hosted pass closes M3.5's required live operational gates automatically.
+
+Prepared commit: chore: add isolated CI verification. **Stop for owner commit
+confirmation before Step 9. M3.5 is not complete.**
+
+## Historical change — M3.5 step 7: failure/recovery journeys (2026-11-18)
 
 Verified 1373a87 and a clean feat/m3-5-operational-readiness. At this handoff the
 owner reports Step 6 PostgreSQL **117/117 passed across 10 files**, 441 unit tests,
