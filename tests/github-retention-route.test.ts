@@ -55,3 +55,18 @@ it('provides no execution, deletion or policy-save method', async () => {
   }
   expect(m.report).not.toHaveBeenCalled();
 });
+it('returns a sanitized no-store failure when the read-only report times out', async () => {
+  const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+  try {
+    m.report.mockRejectedValueOnce(new Error('private SQL and payload details'));
+    const response = await GET(new Request(url), params);
+    expect(response.status).toBe(500);
+    expect(response.headers.get('Cache-Control')).toBe('no-store');
+    expect(JSON.stringify(await response.json())).not.toMatch(
+      /private|payload|candidate|categories/,
+    );
+    expect(JSON.stringify(log.mock.calls)).not.toContain('private');
+  } finally {
+    log.mockRestore();
+  }
+});

@@ -169,3 +169,14 @@ it.each(['dark', 'light'])(
     expect(el.querySelectorAll('thead th[scope="col"]')).toHaveLength(6);
   },
 );
+it('removes previous eligibility after a failed regeneration instead of presenting it as current', async () => {
+  await render();
+  await act(async () => button().click());
+  await loaded();
+  vi.mocked(fetch).mockResolvedValueOnce(json({ error: 'private SQL timeout' }, 500));
+  await act(async () => button().click());
+  await loaded('Could not calculate retention impact');
+  expect(el.querySelector('table')).toBeNull();
+  expect(el.textContent).not.toContain('No GitHub operational records');
+  expect(el.textContent).not.toContain('private');
+});

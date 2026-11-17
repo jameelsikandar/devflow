@@ -8,15 +8,16 @@ M3.4 now adds explicitly confirmed future-event status automation. Its latest
 section below supersedes earlier preview-only deployment notes. Existing OAuth,
 repository browsing, commit history and open-PR reads are retained.
 
-## Current operational status — M3.5 step 6
+## Current operational status — M3.5 step 7
 
 M3.1–M3.4 source is implemented. M3.5 is approved for operational acceptance and
 hardening. Baseline documentation and formatting cleanup are committed; this
-change adds read-only project retention impact reports alongside committed health
-and explicit connection diagnostics (details at the end).
+change adds failure/recovery regression journeys for the committed operational
+features (coverage index at the end).
 Existing processing controls, task links, previews and confirmed PR automation retain
-their current behavior. Failure/recovery verification, CI and final runbooks remain
-later steps. The owner reports healthy-idle/unavailable monitoring and successful
+their current behavior. Owner-local PostgreSQL through Step 6 passed 117/117
+in 10 files; new recovery database/browser verification, CI and final runbooks remain
+open. The owner reports healthy-idle/unavailable monitoring and successful
 live access revalidation; sandbox PostgreSQL/browser verification remains open. The baseline ledger is historical; the step 2 section
 at the end records the current implementation and unverified database gate;
 earlier phase sections remain historical implementation/setup records.
@@ -1144,3 +1145,50 @@ history, metadata overflow and a rejected write in an isolated read-only transac
 These database cases and browser screenshots remain unexecuted here; see
 VERIFICATION.md for actual results and safe Fedora commands. No live GitHub action
 or worker is needed to generate a report.
+
+## M3.5 step 7 — failure/recovery coverage index
+
+The Step 6 owner-local result is 117/117 PostgreSQL cases across 10 files. The
+following new coverage extends that baseline; its PostgreSQL/browser portions
+have not executed in this sandbox. Tests only use fresh devflow_test fixtures and
+mocked/rejected provider responses, never existing live rules, tokens or DEV-002.
+
+| Journey / safeguard                                                                                         | Coverage                                                                                | Execution evidence here                                                           |
+| ----------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| Aborted startup, shutdown while recovering, in-flight sibling draining                                      | github-operations-recovery.test.ts; existing worker tests                               | Passed unit tests                                                                 |
+| Telemetry outage → stale/unavailable → fresh heartbeat without poll → active → graceful stop                | github-operations-recovery.test.ts                                                      | Passed with fake timers/in-memory telemetry storage; not a database/process test  |
+| Health-store shutdown failure preserves primary error and sanitized logs                                    | github-operations-recovery.test.ts                                                      | Passed unit test                                                                  |
+| Startup storage failure leaves receipt pending/unclaimed                                                    | github-operational-recovery.integration.test.ts                                         | Written; PostgreSQL execution pending                                             |
+| Actual fixture processing → active/idle health → STOPPED; unchanged task/rule                               | github-operational-recovery.integration.test.ts                                         | Written; PostgreSQL execution pending                                             |
+| Interrupted lease/stale signal, fencing, bounded recovery vs continuous evidence                            | github-operational-recovery.integration.test.ts                                         | Written; PostgreSQL execution pending; interruption state simulated               |
+| Retry deadline, dead letter, member denial and explicit owner retry                                         | github-operational-recovery.integration.test.ts                                         | Written; PostgreSQL execution pending                                             |
+| Signed duplicate/body replay, invalid signature and changed-content receipt conflict                        | github-operational-recovery.integration.test.ts; existing webhook tests                 | New DB journey pending; existing unit signature/replay regressions pass           |
+| Workspace/project isolation and no private error text in recovery summaries                                 | github-operational-recovery.integration.test.ts; operational-health service/route tests | New DB journey pending; existing unit/HTTP regressions pass                       |
+| Account/repository timeout signal, explicit recovery, no automatic retry                                    | github-revalidation.test.ts                                                             | Passed mocked HTTP tests; controlled abort, not real 15-second wall-clock timeout |
+| Authorization rejection, insufficient/absent permission, inaccessible/policy/429 and inconclusive responses | github-revalidation.test.ts and prior suites                                            | Passed mocked tests; not live GitHub                                              |
+| Observed provider cooldown → local no-request result → explicit success after simulated expiry              | github-revalidation.integration.test.ts                                                 | New DB journey pending                                                            |
+| Retention exact cutoffs/caps/audit protection/read-only enforcement                                         | github-retention.integration.test.ts                                                    | Owner Step 6 DB suite evidence; no fresh sandbox execution                        |
+| Retention query failure cannot publish partial/zero or stale eligibility                                    | github-retention\*.test.ts                                                              | Passed service/HTTP/DOM tests                                                     |
+| Health unavailable→idle, auth rejection→explicit success, incomplete/error report→complete                  | e2e/github-health.spec.ts                                                               | Discovered only; browser execution/screenshots pending                            |
+| Automation atomicity/idempotency/task-version/activity and AI/roadmap boundaries                            | Existing automation/agent/roadmap suites                                                | Unit regressions pass; owner Step 6 DB baseline covers older integration cases    |
+
+Controlled PostgreSQL worker tests call the runtime/functions in process with an
+explicit fresh connection ID and bounded/shutdown controls. They never start a live
+CLI/systemd worker. Telemetry callbacks force a sample to avoid arbitrary sleeps;
+periodic timer behavior is separately tested in unit cases. An interrupted worker
+is modeled by abandoned leased rows and stale RUNNING evidence. Real process signals,
+service-manager restart, PostgreSQL/container outage and live GitHub acceptance
+remain separate owner-run operational gates. Do not treat these fixtures as proof
+that an OS process was killed or a live deployment recovered.
+
+Receipt/event effects remain at-least-once/idempotent, not exactly-once execution.
+A processed ping produces no task automation. Failed/expired leases cannot be
+completed/renewed by their previous owner. A bounded recovery run does not by itself
+prove a continuous worker is deployed. Failed telemetry writes do not change queue
+retry policy or fabricate a clean terminal heartbeat. Retention continues to preserve
+old RUNNING evidence rather than resolving it automatically.
+
+No worker/runtime/API/schema code was changed for Step 7: focused failure tests
+passed against the existing safeguards. Run the updated isolated DB and browser
+commands in VERIFICATION.md before closing their new gates. No live retry, rule
+change, credential revocation or service restart was performed by the agent.

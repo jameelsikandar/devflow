@@ -140,3 +140,12 @@ it('keeps snapshot ages reproducible and does not fabricate missing/evidence tim
   ).toBe('Includes future-dated activity');
   expect(retentionDays.parse(undefined)).toBe(30);
 });
+it('rejects a query timeout instead of publishing partial or zero-filled eligibility', async () => {
+  m.query
+    .mockImplementationOnce(async () => [{ now, cutoff }])
+    .mockRejectedValueOnce(new Error('private statement timeout'));
+  await expect(githubRetentionImpact(actor, 'p')).rejects.toThrow('private statement timeout');
+  expect(m.execute.mock.calls.map(([sql]) => sql.join(''))).toContain(
+    "SET LOCAL statement_timeout = '4s'",
+  );
+});

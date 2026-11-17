@@ -261,3 +261,51 @@ it('respects local request budgets before external calls and rejects malformed s
   c.repositoryFullName = 'https://untrusted.example/repo';
   expect((await revalidateGitHubConnection(actor, 'c')).code).toBe('INVALID_CONNECTION_IDENTITY');
 });
+it.each(['account', 'repository'] as const)(
+  'treats a %s request timeout as inconclusive and recovers only after an explicit new check',
+  async (phase) => {
+    const controller = new AbortController();
+    const timeout = vi.spyOn(AbortSignal, 'timeout').mockReturnValue(controller.signal);
+    try {
+      if (phase === 'repository') vi.mocked(fetch).mockResolvedValueOnce(json(profile));
+      vi.mocked(fetch).mockImplementationOnce(
+        async (_url, init) =>
+          new Promise<Response>((_resolve, reject) => {
+            init?.signal?.addEventListener(
+              'abort',
+              () => reject(new DOMException('private timeout content', 'TimeoutError')),
+              { once: true },
+            );
+          }),
+      );
+      const pending = revalidateGitHubConnection(actor, 'c');
+      await vi.waitFor(() => expect(fetch).toHaveBeenCalledTimes(phase === 'repository' ? 2 : 1));
+      controller.abort();
+      const failed = await pending;
+      expect(failed).toMatchObject({
+        code: 'GITHUB_UNAVAILABLE',
+        state: 'INCONCLUSIVE',
+        retryAt: null,
+      });
+      expect(JSON.stringify(failed)).not.toContain('private');
+      expect(timeout).toHaveBeenCalledWith(15000);
+    } finally {
+      timeout.mockRestore();
+    }
+    const calls = vi.mocked(fetch).mock.calls.length;
+    expect((await revalidateGitHubConnection(actor, 'c')).state).toBe('VALID');
+    expect(fetch).toHaveBeenCalledTimes(calls + 2);
+  },
+);
+it.each([401, 403, 404] as const)(
+  'does not persist a negative HTTP %i diagnosis or change settings before a later explicit successful check',
+  async (status) => {
+    if (status !== 401) vi.mocked(fetch).mockResolvedValueOnce(json(profile));
+    vi.mocked(fetch).mockResolvedValueOnce(json({ message: 'private rejection details' }, status));
+    expect((await revalidateGitHubConnection(actor, 'c')).state).not.toBe('VALID');
+    const original = { ...c };
+    expect((await revalidateGitHubConnection(actor, 'c')).state).toBe('VALID');
+    expect(c).toEqual(original);
+    expect(m.execute).not.toHaveBeenCalled();
+  },
+);

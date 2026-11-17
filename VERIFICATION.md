@@ -1,6 +1,121 @@
 # DevFlow local verification
 
-## Current change — M3.5 step 6: read-only retention impact (2026-11-18)
+## Current change — M3.5 step 7: failure/recovery journeys (2026-11-18)
+
+Verified 1373a87 and a clean feat/m3-5-operational-readiness. At this handoff the
+owner reports Step 6 PostgreSQL **117/117 passed across 10 files**, 441 unit tests,
+healthy Docker PostgreSQL, working retention reports and browser acceptance pending.
+That is owner-run evidence for the committed baseline, not a sandbox run or proof
+that the newly added PostgreSQL cases pass.
+
+### Actual execution in this step
+
+| Check                          | Command                                                                                       | Result                                                                                                       |
+| ------------------------------ | --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| Full unit/HTTP/DOM suite       | AI_API_KEY= GITHUB_CLIENT_ID= GITHUB_CLIENT_SECRET= node_modules/.bin/vitest run --pool=forks | **454 passed, 48 files, 0 failed**; 13 new cases                                                             |
+| Focused failure/recovery suite | vitest run --pool=forks on operations-recovery, revalidation and retention test files         | **61 passed**, 5 files                                                                                       |
+| Full/core TypeScript           | tsc --noEmit; tsc --noEmit -p tsconfig.core.json                                              | Passed                                                                                                       |
+| ESLint                         | node_modules/.bin/eslint .                                                                    | Passed                                                                                                       |
+| Prisma schema validation       | node_modules/.bin/prisma validate                                                             | Passed; schema unchanged                                                                                     |
+| Worker compilation             | node_modules/.bin/tsc -p tsconfig.worker.json --pretty false                                  | Passed; no worker process started                                                                            |
+| Webpack production build       | Installed Next next build --webpack in source snapshot below                                  | Passed                                                                                                       |
+| Formatting/diff                | node_modules/.bin/prettier --check .; git diff --check                                        | Passed                                                                                                       |
+| Playwright discovery           | node_modules/.bin/playwright test e2e/github-health.spec.ts --list                            | **2 cases discovered**, zero executed; not browser passes                                                    |
+| PostgreSQL                     | Not executed in this sandbox step                                                             | Seven new cases written (six cross-layer journeys, one cooldown recovery); no new DB pass/skip count claimed |
+| Live services / screenshots    | Not executed                                                                                  | No real GitHub request, worker CLI/systemd start, SIGKILL, outage injection or screenshot acceptance claimed |
+
+Only tests and documentation changed; application, schema, migration, worker,
+service/API and task/automation source are unchanged. No dependency or environment
+file changes. No live connection, rule, task, DEV-002 or provider event was touched.
+The previously blocked sandbox DB/server checks were not repeatedly retried or
+bypassed; a healthy owner-local container does not establish sandbox connectivity.
+The 117-case owner run precedes the new seven cases and must not be relabeled as
+execution of the updated suite.
+
+Build source snapshot: /tmp/devflow-m35-recovery-build-khlsl4gk, copied tracked/new
+source without private .env or generated output and symlinked installed dependencies.
+The application source is identical to the working application. A non-live placeholder
+DATABASE_URL at localhost:1/devflow_build_test, APP_URL=http://localhost:3000,
+blank AI/GitHub client credentials and NEXT_TELEMETRY_DISABLED=1 were used. Existing
+application .next/dev output and the owner's running server remained untouched.
+Logs: /tmp/devflow-m35-recovery-unit.log, /tmp/devflow-m35-recovery-focused.log,
+/tmp/devflow-m35-recovery-build.log.
+
+### What the recovery evidence proves
+
+New runtime unit tests use injected processors and in-memory telemetry storage,
+fake timers and deferred gates: no DB/job process is started. They exercise startup
+and abort boundaries, sibling draining, unavailable telemetry→fresh heartbeat with
+stale poll→active work, graceful shutdown and failure bookkeeping/log sanitization.
+Provider timeout tests manually abort the signal supplied through the real transport
+and assert its configured 15-second bound; they do not wait 15 wall-clock seconds
+or contact GitHub. Explicit subsequent calls must recover without changing connection
+settings. Retention service/HTTP/UI failures cannot publish partial/zero-filled or
+stale eligibility. Existing automation/AI/roadmap unit regressions remain passing.
+
+New PostgreSQL tests use actual signed ingestion, leases, scoped runtime helpers,
+health/retention services and fixture records. They test live lease status followed
+by expired recovery, fenced old-owner completion/renewal/failure, backoff/dead letters,
+explicit authorized retry, signed/body replay protection, unchanged task/version/
+disabled-rule snapshots and sanitized authorization/isolation. A separate cooldown
+case expires only its test metadata key before an explicit provider recheck.
+
+These database journeys are **unexecuted here**. They model interruption by stale
+RUNNING evidence and abandoned lease fields, not by killing an OS worker. A controlled
+telemetry flush samples DB state without sleeps; unit tests separately exercise
+actual timer/coalescing behavior. In-process fixture runtime uses a fresh explicit
+connection ID and bounded/abort controls, never a live/default-global worker.
+A future owner run must distinguish SQL fixture recovery from real service-manager,
+container, network and live webhook acceptance.
+
+The existing browser journey adds unavailable→idle, rejected authorization→explicit
+valid result, and incomplete/error retention→complete fixtures. Requests are mocked;
+no automatic revalidation or resource mutation is permitted. Discovery/TypeScript
+are not proof of native keyboard, responsive, screenshot or real authorization behavior.
+Coverage references are indexed in GITHUB_INTEGRATION.md.
+
+### Safe Fedora verification for the updated suite
+
+Use existing migrated devflow_test, not the application database. No new migration,
+reset, seed or service configuration is required. First validate the target:
+
+```bash
+node --import tsx <<'NODE'
+require('dotenv/config');
+const { requireTestDatabase } = require('./tests/database-config.ts');
+const target = requireTestDatabase(process.env.DATABASE_URL, process.env.TEST_DATABASE_URL);
+if (target.pathname !== '/devflow_test') throw Error('Only devflow_test permitted');
+console.log('Verified isolated test target', target.hostname, target.port, target.pathname);
+NODE
+# Continue only after the guard succeeds.
+AI_API_KEY= GITHUB_CLIENT_ID= GITHUB_CLIENT_SECRET= pnpm exec vitest run --config vitest.integration.config.ts tests/github-operational-recovery.integration.test.ts tests/github-revalidation.integration.test.ts
+AI_API_KEY= GITHUB_CLIENT_ID= GITHUB_CLIENT_SECRET= pnpm test:integration
+AI_API_KEY= GITHUB_CLIENT_ID= GITHUB_CLIENT_SECRET= pnpm exec vitest run --pool=forks
+pnpm typecheck
+pnpm typecheck:core
+pnpm lint
+pnpm format:check
+pnpm exec prisma validate
+pnpm github:worker:build
+# Stop the local dev server or use a separate source copy to isolate .next output.
+# Keep 3100 free: Playwright must start its own isolated server.
+AI_API_KEY= GITHUB_CLIENT_ID= GITHUB_CLIENT_SECRET= pnpm test:e2e e2e/github-health.spec.ts --reporter=list,html
+AI_API_KEY= GITHUB_CLIENT_ID= GITHUB_CLIENT_SECRET= pnpm test:e2e --reporter=list,html
+AI_API_KEY= GITHUB_CLIENT_ID= GITHUB_CLIENT_SECRET= pnpm build:webpack
+```
+
+Fixtures create fresh users/workspaces/projects/connections and a disabled rule/task
+snapshot. Failure timing is controlled by fixture-only fields or deferred gates,
+not sleeps. Cleanup uses only those fixture IDs. Provider fetch is mocked or rejects
+unexpected requests; no live credentials are required. No application database,
+existing enabled/disabled rule or DEV-002 is a fixture. No standalone worker command
+is needed or authorized by these test instructions.
+
+Prepared commit: `test: cover operational failure and recovery journeys`. Wait
+for owner commit confirmation before Step 8. No Git staging/commit/push was attempted.
+M3.5 remains open until required updated DB/browser/live operational gates execute.
+
+## Historical change — M3.5 step 6: read-only retention impact (2026-11-18)
 
 Verified 09a32aa on feat/m3-5-operational-readiness and a clean starting tree. Owner
 manual evidence: working worker-health UI, correct idle/unavailable distinction,

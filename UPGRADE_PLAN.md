@@ -1,11 +1,11 @@
 # DevFlow 2.0 upgrade
 
 Current implementation: M1, M2 and M3.1–M3.4. Current approved work: **M3.5 —
-operational acceptance and hardening**, step 6 (read-only retention impact reports).
+operational acceptance and hardening**, step 7 (operational failure and recovery journeys).
 M3.5 is not complete. The current status and checklist below supersede older
 planning statements; dated results remain historical evidence, not fresh passes.
 
-## Current status — M3.5 step 6 (2026-11-18)
+## Current status — M3.5 step 7 (2026-11-18)
 
 The owner created `feat/m3-5-operational-readiness` from `48d7b5c` on clean `main`.
 The initial feature-branch check confirmed a clean working tree and empty index.
@@ -26,7 +26,10 @@ replace unexecuted sandbox database/browser cases. Step 5 prepares explicit
 connection revalidation (committed 09a32aa). The owner reports successful repository/
 admin-access revalidation and correct idle/unavailable monitoring with no retargeting
 or automation changes. That manual evidence is not an agent-executed database or
-browser suite. Step 6 prepares read-only retention impact reporting.
+browser suite. Step 6 is committed as 1373a87. At this handoff the owner reports
+117/117 isolated PostgreSQL tests passing across 10 files and working retention
+reports. Step 7 adds recovery regressions; its new PostgreSQL cases and browser
+execution are not covered by that earlier run.
 
 M3.5 reuses the existing queue, workflow executor, task activity and administrator
 panels. Approved scope: lightweight PostgreSQL worker health, scoped operational
@@ -516,18 +519,18 @@ follows below. Unrelated actions/automation triggers remain excluded.
 ## M3.5 approved sequence and acceptance gates — 2026-11-15
 
 Step 1 documentation (f1a1a2b) and formatting cleanup (f101e28) were confirmed by
-the owner before step 2 began. Step 2 was confirmed as 8fbdc3e with a clean tree. Step 3 was confirmed as fb5d5b0 with a clean tree. Step 4 was confirmed as e3f6ecf with a clean tree. Step 5 was confirmed as 09a32aa with a clean tree. Step 6 is prepared for the
-owner's local commit. **Do not begin step 7 until that commit is confirmed.**
+the owner before step 2 began. Step 2 was confirmed as 8fbdc3e with a clean tree. Step 3 was confirmed as fb5d5b0 with a clean tree. Step 4 was confirmed as e3f6ecf with a clean tree. Step 5 was confirmed as 09a32aa with a clean tree. Step 6 was confirmed as 1373a87 with a clean tree. Step 7 is prepared for the
+owner's local commit. **Do not begin step 8 until that commit is confirmed.**
 
 | Step | Focused commit                                                    | State                                                   |
 | ---- | ----------------------------------------------------------------- | ------------------------------------------------------- |
 | 1    | docs: reconcile milestone status and operational acceptance gates | Committed: f1a1a2b                                      |
-| 2    | feat(ops): persist scoped worker health signals                   | Committed: 8fbdc3e; PostgreSQL evidence not supplied    |
+| 2    | feat(ops): persist scoped worker health signals                   | Committed: 8fbdc3e; covered by owner Step 6 DB run      |
 | 3    | feat(github): expose authorized operational health summaries      | Committed: fb5d5b0                                      |
 | 4    | feat(github): display operational health in existing panels       | Committed: e3f6ecf; owner reports local healthy-idle UI |
 | 5    | feat(github): add explicit connection revalidation diagnostics    | Committed: 09a32aa; owner reports live read acceptance  |
-| 6    | feat(ops): add read-only retention impact reports                 | Prepared; PostgreSQL/browser gates unexecuted           |
-| 7    | test: cover operational failure and recovery journeys             | Pending                                                 |
+| 6    | feat(ops): add read-only retention impact reports                 | Committed: 1373a87; owner DB 117/117, browser pending   |
+| 7    | test: cover operational failure and recovery journeys             | Prepared; new DB/browser gates pending                  |
 | 8    | chore: add isolated CI verification                               | Pending                                                 |
 | 9    | docs: publish M3.5 deployment and acceptance runbooks             | Pending                                                 |
 
@@ -675,3 +678,27 @@ migration or domain mutation is introduced. Endpoint and UI remain admin-only.
 journey remain unexecuted here. Exact static/build/format results and local commands
 are in VERIFICATION.md. Potential candidates are not deletion authorization.
 **Wait for owner commit confirmation before step 7.**
+
+### Step 7 — operational failure/recovery journeys (2026-11-18)
+
+Verified 1373a87 and a clean feature branch. Owner-reported pre-change baseline:
+117/117 PostgreSQL cases across 10 files, retention UI accepted, 441 unit cases,
+Docker PostgreSQL healthy, browser tests pending. This is owner-run evidence for
+Step 6, not execution of the new Step 7 cases in this sandbox.
+
+Added five runtime/telemetry unit journeys, five revalidation timeout/recovery
+cases and three retention timeout/error regressions. Added six cross-layer
+PostgreSQL journeys and one provider-cooldown recovery case using fresh isolated
+fixtures and mocked/rejected external fetch. The existing browser fixture now
+includes unavailable→idle, rejected authorization→explicit success and incomplete/
+failed retention→complete transitions. Runtime and signed-receipt/lease tests
+preserve existing source code; no application, worker, schema, service or API
+behavior change was necessary based on available checks.
+
+454 unit cases pass in 48 files; static/Prisma/build checks pass. Seven new database
+cases and native browser execution remain unexecuted here. Interruption tests
+model abandoned leases/stale evidence; they do not launch/kill an OS service.
+PostgreSQL telemetry is explicitly flushed in controlled test callbacks rather
+than waiting for wall-clock ticks; timer/coalescing behavior is exercised separately
+with fake timers. See GITHUB_INTEGRATION.md coverage index and VERIFICATION.md.
+**Wait for owner commit confirmation before step 8.** M3.5 remains open.

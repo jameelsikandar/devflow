@@ -30,6 +30,10 @@ test('administrator health is read-only, responsive and explicit about stale/err
   const writes: string[] = [];
   let revalidations = 0;
   let retentionReads = 0;
+  let workerState: 'HEALTHY_IDLE' | 'UNAVAILABLE' = 'HEALTHY_IDLE';
+  let authorizationRejected = true;
+  let retentionIncomplete = false;
+  let retentionFailure = false;
   await page.route('**/api/github**', async (route) => {
     const path = new URL(route.request().url()).pathname;
     if (path.endsWith('/revalidate') && route.request().method() === 'POST') {
@@ -40,8 +44,8 @@ test('administrator health is read-only, responsive and explicit about stale/err
           scope,
           checkedAt: new Date().toISOString(),
           authorizationSource: 'REQUESTING_ADMIN',
-          state: 'VALID',
-          code: 'ACCESS_VALID',
+          state: authorizationRejected ? 'AUTHORIZATION_REJECTED' : 'VALID',
+          code: authorizationRejected ? 'AUTHORIZATION_REJECTED' : 'ACCESS_VALID',
           retryAt: null,
           retrySource: null,
         },
@@ -54,9 +58,26 @@ test('administrator health is read-only, responsive and explicit about stale/err
     if (path.endsWith('/retention') && route.request().method() === 'GET') {
       retentionReads++;
       const days = Number(new URL(route.request().url()).searchParams.get('days')) as 7 | 30 | 90;
+      if (retentionFailure)
+        return route.fulfill({ status: 503, json: { error: 'private report timeout' } });
+      const report = retentionFixture(days);
+      if (retentionIncomplete) {
+        report.complete = false;
+        Object.assign(report.categories[0], {
+          complete: false,
+          scannedAtLeast: 10001,
+          total: null,
+          older: null,
+          potentiallyEligible: null,
+          preservedOlder: null,
+          dependencyProtectedOlder: null,
+          oldestAt: null,
+          newestAt: null,
+        });
+      }
       return route.fulfill({
         json: {
-          ...retentionFixture(days),
+          ...report,
           scope: { workspaceId, projectId: project.id, archived: false },
         },
       });
@@ -64,9 +85,7 @@ test('administrator health is read-only, responsive and explicit about stale/err
     if (path.endsWith('/health'))
       return route.fulfill({
         status: fail ? 503 : 200,
-        json: fail
-          ? { error: 'private provider diagnostic' }
-          : healthFixture('HEALTHY_IDLE', scope),
+        json: fail ? { error: 'private provider diagnostic' } : healthFixture(workerState, scope),
       });
     if (path === '/api/github/repositories')
       return route.fulfill({
@@ -129,11 +148,21 @@ test('administrator health is read-only, responsive and explicit about stale/err
   await expect(health.getByRole('alert')).toHaveCount(0);
   expect(writes).toEqual([]);
   expect(revalidations).toBe(0);
+  workerState = 'UNAVAILABLE';
+  await refresh.click();
+  await expect(health).toContainText('No fresh continuous-worker signal');
+  workerState = 'HEALTHY_IDLE';
+  await refresh.click();
+  await expect(health).toContainText('Healthy idle');
   const revalidation = page.getByRole('region', { name: 'Connection revalidation', exact: true });
+  await revalidation.getByRole('button', { name: 'Revalidate GitHub access', exact: true }).click();
+  await expect(revalidation).toContainText('Authorization rejected');
+  expect(revalidations).toBe(1);
+  authorizationRejected = false;
   await revalidation.getByRole('button', { name: 'Revalidate GitHub access', exact: true }).click();
   await expect(revalidation).toContainText('Repository access verified');
   await expect(revalidation).toContainText('Your OAuth account only');
-  expect(revalidations).toBe(1);
+  expect(revalidations).toBe(2);
   expect(retentionReads).toBe(0);
   const retention = page.getByRole('region', { name: 'Retention impact report', exact: true });
   await retention.getByRole('button', { name: 'Generate read-only report', exact: true }).click();
@@ -151,5 +180,18 @@ test('administrator health is read-only, responsive and explicit about stale/err
     });
   }
 
+  retentionIncomplete = true;
+  await retention.getByRole('button', { name: 'Generate read-only report', exact: true }).click();
+  await expect(retention).toContainText('Report incomplete');
+  await expect(retention).toContainText('analysis not calculated');
+  retentionFailure = true;
+  await retention.getByRole('button', { name: 'Generate read-only report', exact: true }).click();
+  await expect(retention.getByRole('alert')).toContainText('Could not calculate retention impact');
+  await expect(retention.locator('table')).toHaveCount(0);
+  await expect(retention).not.toContainText('private report timeout');
+  retentionFailure = false;
+  retentionIncomplete = false;
+  await retention.getByRole('button', { name: 'Try retention report again', exact: true }).click();
+  await expect(retention).toContainText('No GitHub operational records');
   expect(writes).toEqual([]); // No GitHub resource mutation, enrichment or retry requests.
 });

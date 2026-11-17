@@ -261,3 +261,25 @@ it('bounds repeated checks using existing atomic per-administrator request budge
   expect(fetch).toHaveBeenCalledTimes(before);
   expect(await db.taskActivity.count({ where: { workspaceId } })).toBe(0);
 });
+it('recovers from an observed provider cooldown only after an explicit later request', async () => {
+  const f = await fixture();
+  vi.mocked(fetch).mockResolvedValueOnce(
+    json({ message: 'limited' }, 429, { 'Retry-After': '120' }),
+  );
+  expect((await revalidateGitHubConnection(actor(), f.c.id)).code).toBe('GITHUB_RATE_LIMITED');
+  expect((await revalidateGitHubConnection(actor(), f.c.id)).code).toBe('AUTHORIZATION_COOLDOWN');
+  expect(fetch).toHaveBeenCalledOnce();
+  // Model elapsed cooldown on the isolated fixture key; no clock sleeps or app records.
+  await db.rateLimit.update({
+    where: { key: cooldowns.at(-1)! },
+    data: { expiresAt: new Date(0) },
+  });
+  expect((await revalidateGitHubConnection(actor(), f.c.id)).state).toBe('VALID');
+  expect(fetch).toHaveBeenCalledTimes(3);
+  expect(await db.gitHubRepositoryConnection.findUniqueOrThrow({ where: { id: f.c.id } })).toEqual(
+    f.c,
+  );
+  expect(await db.gitHubConnection.findUniqueOrThrow({ where: { userId: users[0] } })).toEqual(
+    f.account,
+  );
+});

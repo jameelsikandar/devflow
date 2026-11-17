@@ -10,7 +10,8 @@ remains open in this sandbox. M3.5 step 2 adds durable worker signals and eviden
 provides administrator-only operational summary APIs. Step 4 prepares their
 display in the existing processing panel (committed e3f6ecf). Step 5 adds explicit
 connection diagnostics (committed 09a32aa). Step 6 adds read-only retention reports;
-later operational work remains pending. Step 2 migration verification remains unavailable in this sandbox.
+later operational work remains pending. The owner reports 117/117 isolated database
+tests through Step 6; fresh Step 7 database/browser verification remains open.
 This is **not a claim that the entire DevFlow 2.0 mission is finished**. The checklist
 in `UPGRADE_PLAN.md` records the remaining phases and open release gates.
 
@@ -1233,3 +1234,41 @@ or external service action occurred. Source changes are only the read-only repor
 its panel integration, tests and documentation. Prepared commit:
 `feat(ops): add read-only retention impact reports`. Stop before step 7 pending
 owner commit confirmation; M3.5 acceptance remains open.
+
+## M3.5 step 7 — operational recovery regressions (2026-11-18)
+
+Confirmed clean feature branch at 1373a87. Owner-reported baseline: retention UI
+accepted, 117/117 isolated PostgreSQL tests across 10 files, 441 unit tests and
+healthy Docker PostgreSQL. Browser acceptance remained pending. These are owner
+results associated with the committed Step 6 code; no new DB pass is inferred.
+
+This change is tests/documentation only. New unit journeys exercise pre-aborted
+startup, shutdown during recovery, batch sibling draining, telemetry write outage/
+staleness and resumed active processing, plus terminal-health persistence failure
+without masking the processing error or leaking private text. Revalidation tests
+abort mocked account/repository requests through the configured timeout signal,
+then require explicit successful rechecks; negative 401/403/404 diagnoses do not
+persistently poison a connection. Retention service/HTTP/UI tests prove failure
+instead of partial/zero eligibility and remove old report data after a failed read.
+
+New PostgreSQL tests combine actual signed ingestion, bounded/in-process fixture
+worker execution, health API, retention and queue functions. They cover unclaimed
+receipts after startup failure; active→idle→graceful stop; abandoned lease recovery
+with stale-owner fencing; bounded recovery not proving continuous availability;
+backoff/dead letters/explicit authorized retry; signed and payload replay resistance;
+scoped sanitized diagnostics; and provider cooldown expiry followed by an explicit
+check. Task/version/disabled-rule snapshots and machine activity remain unchanged
+except intended isolated receipt processing and explicit human retry audit.
+
+Unexpected interruption is modeled by stale RUNNING/lease fixture state, not a
+real SIGKILL or live-worker restart. A controlled telemetry flush samples actual
+PostgreSQL state without sleeps; fake-timer unit tests cover periodic coalescing.
+No production service implementation needed alteration, and no application data,
+DEV-002, live rules/connections or external events were touched.
+
+Available checks: 454 unit cases passed in 48 files, Prisma validation, full/core
+TypeScript, worker compilation, ESLint and isolated webpack build passed. Formatting
+and safe local DB/browser commands are in VERIFICATION.md. Seven added PostgreSQL
+cases are unexecuted here; browser discovery is two cases, not execution or screenshots.
+Prepared commit: `test: cover operational failure and recovery journeys`.
+Stop before Step 8 until the owner confirms the local commit. M3.5 is not complete.
