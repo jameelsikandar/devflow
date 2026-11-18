@@ -56,7 +56,7 @@ function absent(list, name) {
 function provenance(p) {
   insist(
     p?.approved === true &&
-      /^node:22\.[0-9.]+-bookworm@sha256:[a-f0-9]{64}$/.test(p.nodeImage) &&
+      /^node:22(?:\.[0-9.]+)?-bookworm@sha256:[a-f0-9]{64}$/.test(p.nodeImage) &&
       /^postgres:18[^@]*@sha256:[a-f0-9]{64}$/.test(p.postgresImage) &&
       /^sha512-[A-Za-z0-9+/]+={0,2}$/.test(p.pnpmIntegrity) &&
       typeof p.reviewEvidence === 'string' &&

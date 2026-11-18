@@ -1,7 +1,8 @@
 {
   "approved": false,
-  "nodeImage": null,
-  "postgresImage": null,
-  "pnpmIntegrity": null,
-  "reviewEvidence": null
+  "nodeImage": "node:22-bookworm@sha256:69c6e263db01e9946c7743bbbe9f7b1ba0df384d27ec09e08e5832d6acd3daf3",
+  "postgresImage": "postgres:18-alpine@sha256:fa1b61f5a4844f4d4b73c9b15716cfc75fe70c931f2d32723630f3b900056366",
+  "pnpmIntegrity": "sha512-vWgtXQP+Ul73yf1ngMaITR51asTJyf4AxTh4KCQxDc+Q493E9Tg18G3669UIXkGFXgvLs7YN4qxburieUDbwOw==",
+  "platform": "linux/amd64",
+  "reviewEvidence": "Owner-reported Fedora x86_64 registry inspection; official docker.io/library/node:22-bookworm and docker.io/library/postgres:18-alpine. Pins select linux/amd64 manifests, not multi-platform indexes or image configurations. Node index sha256:e13726ca604184d7a91fcacab1fc09eefd642dc28e79ac34e85540dd93b78cfb; amd64 configuration sha256:cb7c8430c81cdac83074501ee7e3ce46a1c3b8b12e9ef50b5c4e5651d36dd456. PostgreSQL metadata identifies 18.7-alpine3.24. pnpm 11.9.0: https://registry.npmjs.org/pnpm/-/pnpm-11.9.0.tgz; owner reports registry integrity matches independently calculated archive SHA-512. Codex has not independently retrieved these artifacts. Prepared from 5068d53; owner review and Approval A remain pending."
 }

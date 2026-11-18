@@ -6,16 +6,28 @@ DEV-002 are outside this harness. No cleanup, live GitHub or Groq access is allo
 
 ## Approval A blockers and provenance
 
-`provenance.json` deliberately has `approved: false` and null values. No digests or
-integrity values were invented or fetched. Before requesting Approval A, obtain
-independent review evidence for:
+`provenance.json` contains owner-supplied evidence and deliberately retains
+`approved: false`. The owner reports verification on Fedora x86_64 using official
+Docker registry metadata and an independent pnpm archive SHA-512 calculation.
+Codex has not independently retrieved or hashed those artifacts.
 
-1. The exact Node 22 Bookworm image **tag and SHA-256 digest**.
-2. The exact PostgreSQL 18 image **tag and SHA-256 digest**.
-3. The official pnpm 11.9.0 archive **SHA-512 integrity**, with source/provenance.
-4. The reviewed harness/source revision, image build inputs and approval record.
+- Node: `node:22-bookworm@sha256:69c6e263db01e9946c7743bbbe9f7b1ba0df384d27ec09e08e5832d6acd3daf3`.
+- PostgreSQL: `postgres:18-alpine@sha256:fa1b61f5a4844f4d4b73c9b15716cfc75fe70c931f2d32723630f3b900056366`;
+  registry metadata reports PostgreSQL 18.7-alpine3.24.
+- Both pins identify **Linux/amd64 platform manifests**, not multi-platform index
+  digests or image configuration digests. The Node index/configuration hashes are
+  retained separately in `reviewEvidence`.
+- pnpm: official npm distribution `pnpm@11.9.0`, archive
+  <https://registry.npmjs.org/pnpm/-/pnpm-11.9.0.tgz>. The owner-reported matching
+  SHA-512 integrity is retained verbatim in the manifest.
 
-A later reviewed change must supply these values and approval evidence. Merely
+The major Node tag is permitted only with an immutable SHA-256 pin; no patch label
+is inferred. Official repository names, Node 22 Bookworm, PostgreSQL 18, digest
+requirements and the explicit approval gate remain enforced. The `platform` field
+records the intended target; it is not a new automatic host architecture check.
+Runtime/image compatibility and the final owner review remain outstanding.
+
+A later separately authorized change must record owner approval. Merely
 flipping the boolean does not satisfy acceptance. Build validation compares the
 Node base argument with the approved manifest; the downloaded pnpm tarball must
 match its approved integrity before installation. Runtime and host admission also
@@ -181,13 +193,13 @@ its result. No existing integration config (which loads `.env`) may run here.
 ## Future Fedora procedure — NOT AUTHORIZED FOR EXECUTION
 
 All steps require a separate approved scope and reviewed committed source. The
-current uncommitted harness and unresolved provenance are not execution-ready.
+reviewed preparation-only harness and unapproved provenance are not execution-ready.
 Approvals: A build/storage/bootstrap; B synthetic fixtures/idle/processing; C owned
 signals/faults/recovery; D synthetic automation; E stopping resources, followed by
 separate itemized deletion approval. CLI scopes enforce deliberate selection; they
 do not replace owner authorization. Never run against an existing database.
 
-After provenance resolution, review this sequence again before Approval A:
+After owner review of provenance, review this sequence again before Approval A:
 
 ```bash
 set -euo pipefail
