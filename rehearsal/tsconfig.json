@@ -1,0 +1,10 @@
+{
+  "extends": "../tsconfig.worker.json",
+  "compilerOptions": { "rootDir": "..", "outDir": "../.worker" },
+  "include": [
+    "../scripts/github-worker.ts",
+    "../src/lib/server/github-operational-health.ts",
+    "../src/lib/server/github-workflows.ts"
+  ],
+  "exclude": ["../node_modules", "../.next", "../.worker"]
+}
