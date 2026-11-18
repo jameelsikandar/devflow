@@ -1,5 +1,111 @@
 # DevFlow local verification
 
+## Worker rehearsal safety-audit corrections — source verification only
+
+Preparation began on `audit/m3-5-operational-acceptance` at `8c5bc07`.
+Inspection for this documentation reconciliation confirmed the same branch at
+`980de20`, following preparation-only commits `942d87c` (isolation/provenance
+guards) and `980de20` (worker recovery harness/scenarios). Documentation and
+README/source-contract preparation remain pending. No runtime acceptance follows
+from these commits. This reconciliation changes only this file and
+`deploy/M3_5_ACCEPTANCE.md`; no staging or commit is performed by this update.
+
+Latest previously executed isolated verification: **143/143 tests passed across
+five files** — 57 policy, 52 safety, 23 migration-lifecycle, seven source-contract
+and four controller/supervisor tests. The earlier **120/120 across four files**,
+**138/138 across five files**, and 65-case preparation below are historical stages,
+not additional current executions. The 138-case stage included 18 migration
+regressions; the final five cases cover absolute setup-deadline and final-log-close
+races. These use injected fake Docker, filesystems, child processes, SQL objects
+and transports; Vite environment-file discovery remains disabled (`envDir: false`).
+No real child process or application module is executed by these tests. Earlier
+failed intermediate checks are not represented as passing executions.
+
+Focused source safety reviews are complete. The original H1 (migration launch
+after cancellation during log opening), H2 (unhandled migration IPC/child errors)
+and UNRESOLVED diagnostic corrections passed subsequent source inspection. The
+absolute monotonic setup deadline and cancellation/deadline recheck after final
+log closure passed final focused source review. **The reviewed harness is
+acceptable for preparation-only commits, not execution.** Source inspection and
+pure tests do not verify actual process, filesystem, database or recovery behavior.
+
+| Audit item       | Prepared correction / evidence                                                                                                                                                                                                           |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Fresh storage    | Docker-generated anonymous identities, positive listing failures, creation/driver/options checks; retained network-none probe verifies empty roots and local ext4/XFS/Btrfs backing; one-use pre-PG admission rejects other volume users |
+| Deadlines        | Operation budget, per-predicate timeout, SQL connection/pool/socket and server/transaction limits, cancellation checks and persisted unresolved latch                                                                                    |
+| Migration        | Exclusive logging before fork; guarded actual CLI-main loading; owned descendant handles and private-namespace inventory; terminal proof plus actual exit/close required; unknown work blocks later launches                             |
+| Unexpected exits | Intentional signals/validated exits tracked; unvalidated nonzero, signal and zero exits fail drain                                                                                                                                       |
+| Fencing          | Replacement B is held PROCESSING with a different active lease while stale A attempts completion/renewal/failure; B's lease remains intact before one publication                                                                        |
+| Worker readiness | Actual production storage pulse supplies each worker's run identity and completed poll; aggregate previous-run heartbeat cannot establish readiness                                                                                      |
+| Backoff/effects  | Positive bounded scheduling window, due-time plus new-poll dead-letter assertion, task-link/evidence/observation/execution/activity uniqueness checks                                                                                    |
+| Provenance       | **Unresolved Approval A blocker** in provenance.json; build requires reviewed image digests and verifies pnpm tarball SHA-512 before installation                                                                                        |
+| Network/docs     | JS transport denial and internal/private Docker topology described without claiming universal native/OS egress protection; fatal syntax loop; untested crash windows explicit                                                            |
+
+Executed source-only checks: full/core/rehearsal TypeScript (`--noEmit
+--incremental false`), focused ESLint, changed-file Prettier, CommonJS syntax,
+entrypoint `sh -n`, local Markdown file links and `git diff --check`. All passed in the final
+source-only verification. The CommonJS helpers are syntax/lint/pure
+unit checked; passing TypeScript does not establish their real Docker behavior.
+
+**Approval A is still blocked.** No image digests, pnpm integrity or registry
+provenance were fabricated/resolved remotely. Supply independently reviewed values
+and evidence through a later reviewed change; do not simply flip the approval flag.
+The rootful local Docker endpoint and allowed backing filesystems are deliberate
+limits. Image build, volume population/mount reporting, Prisma guardian/engine
+behavior, SQL timeout compatibility, actual signals/recovery and OS/native egress
+remain unverified. The protocol assumes a trusted Docker administrator and no
+concurrent resource manipulation. Unknown namespace processes fail conservatively.
+
+No production systemd recovery, mid-transaction OS kill, post-commit/pre-ack crash
+or crash between PR planning and automation execution is claimed. No existing
+integration suite, normal application test suite, Prisma command, production
+build, browser test or live GitHub/Groq request was run for this task. All pending
+operational/recovery gates remain open; M3.5 acceptance is not complete and
+production deployment has not started. The focused source reviews permit
+preparation-only commits and do not authorize execution. See
+[the corrected procedure and remaining blockers](rehearsal/README.md).
+
+## Worker recovery harness preparation — no rehearsal executed
+
+Preparation started on `audit/m3-5-operational-acceptance` at `8c5bc07`, with a
+clean working tree. All new runtime helpers/configuration/tests are confined to
+`rehearsal/`; production source, schema, migrations, CI and environment files are
+unchanged. See [the harness review/procedure](rehearsal/README.md) and
+[acceptance approval boundary](deploy/M3_5_ACCEPTANCE.md#worker-recovery-harness--prepared-not-executed).
+
+Executed safe source-only checks:
+
+- Separate pure Vitest configuration: **65 passed across three files** (57 policy,
+  four controller/supervisor and four static source-contract tests), with Vite
+  environment-file discovery explicitly disabled (`envDir: false`). Environment,
+  mounts, inventory, outbound rejection and supervisor tests use synthetic
+  objects/fake transports/injected attempts. They do not execute a worker,
+  contact PostgreSQL, inspect Docker or install the real network guard.
+- Full, core and rehearsal TypeScript checks (`--noEmit --incremental false`):
+  passed. These compile/check types without executing imported application code;
+  CommonJS harness files additionally received syntax/ESLint checks.
+- Focused ESLint: passed with no warnings/errors. Changed-file Prettier, CommonJS
+  syntax checks, local Markdown file-link existence checks and `git diff --check`:
+  passed. No runtime acceptance follows from these source checks.
+
+Preparation caveat: initial pure test runs did not explicitly disable Vite's
+implicit environment-file discovery. No application/database imports or network
+calls occurred and no secret values were logged, but `.env` discovery cannot be
+ruled out for those earlier runs. The final reported run uses `envDir: false`;
+the configuration is protected by a source-contract assertion.
+
+Deliberately **not executed**: Docker inspection/build/start, any database
+connection/migration/fixture, existing integration suites (their configuration
+loads `.env`), worker startup, signal/fault scenarios, supervisor processes,
+Playwright, application builds/Prisma generation, live GitHub/Groq or cleanup.
+Only the fake-injected supervisor algorithm was unit tested. No new database,
+worker recovery or browser passes are claimed. Approval A and all subsequent
+rehearsal checkpoints remain pending. Previous owner-reported backup/restore
+success and historical application checks below retain their original scope.
+
+No commits were created by Codex because this environment marks `.git` read-only;
+focused local staging/commit commands accompany the handoff. No push or merge.
+
 ## Current evidence — operational acceptance Step 8: local PostgreSQL recovery
 
 Confirmed audit/m3-5-operational-acceptance at 476ce73 with a clean working tree

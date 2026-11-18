@@ -24,6 +24,82 @@ This reconciliation occurs on audit/m3-5-operational-acceptance. No worker, DB,
 environment, connection, rule or task changes are authorized. Preserve DEV-002 and
 its history; active exercises require separately approved disposable scope.
 
+## Worker rehearsal safety corrections — source reviews complete, execution blocked
+
+The initial read-only audit blocked Approval A. The test-only harness now contains
+source corrections for fresh-storage admission before PG startup, operation/SQL
+deadlines, migration descendant ownership/drain, unexpected exits, active
+replacement-lease fencing and worker-specific readiness. Retry/effect assertions
+and the procedure have also been strengthened. No production code/schema/data or
+existing connection, rule, task, backup or recovery database was changed.
+
+Storage uses new anonymous Docker identities, strict driver/options/creation
+checks and an empty-root local-filesystem probe before any PG start. An explicit
+one-use pre-start check rejects reused storage. The controller persists unresolved
+operation state and blocks dependent launches; migration requires descendant proof
+and actual process closure. Latest previously executed source-only verification:
+**143/143 isolated pure tests across five files**, plus passing full/core/rehearsal
+TypeScript, focused ESLint, Prettier, syntax and Git diff checks. Earlier **120/120
+across four files**, **138/138 across five files** and the initial 65-case result
+remain historical evidence, not fresh reruns. These are fake-injected checks,
+not operational acceptance.
+
+The original H1/H2 migration lifecycle corrections and UNRESOLVED dominance passed
+subsequent source inspection. Final focused review also passed the absolute
+monotonic setup deadline and cancellation/deadline checks after final log closure.
+**The harness is acceptable for preparation-only commits, not execution.** The
+isolation and harness code are committed locally as `942d87c` and `980de20` on the
+audit branch; this documentation reconciliation performs no staging or commit.
+See [verification evidence](../VERIFICATION.md#worker-rehearsal-safety-audit-corrections--source-verification-only).
+
+**Approval A remains blocked by unresolved image/package provenance.**
+`rehearsal/provenance.json` intentionally remains unapproved with null digests and
+integrity. Review and supply exact Node/PostgreSQL image digests, official pnpm
+11.9.0 tarball SHA-512 and review evidence through a later reviewed change. The
+harness refuses unresolved provenance; no registry lookup/build was performed.
+
+All real Docker/migration/worker/OS-signal scenarios remain **unexecuted**. Actual
+volume/mount behavior, guardian/engine compatibility and native/OS egress remain
+unverified. Scope is local rootful Docker with supported ext4/XFS/Btrfs storage;
+no malicious-host-root isolation, production systemd recovery or mid-transaction
+OS-kill proof is claimed. Focused source review is complete; provenance, the exact
+resource plan and [procedure](../rehearsal/README.md) still require approval before
+execution. This preparation does not close worker recovery, rollback,
+encryption-key, disposable
+GitHub, browser/accessibility or production gates. M3.5 operational acceptance
+remains open and production deployment has not started. No real Docker, database,
+Prisma, worker or recovery rehearsal was executed for this harness; no cleanup
+has been performed or authorized.
+
+## Worker recovery harness — prepared, not executed
+
+A test-only [rehearsal harness](../rehearsal/README.md) is now prepared for the
+separately approved isolated worker recovery exercise. Inspection confirmed audit
+branch HEAD `8c5bc07` before these changes. No production implementation, schema,
+configuration or existing data is changed by this preparation.
+
+The harness uses a clean image, a unique internal network and fresh PostgreSQL 18
+cluster/database, synthetic-only fixtures/secrets, pre-import isolation checks,
+owned child-process controls and real worker lease/fencing/automation paths.
+Bootstrap plus nine scenario commands cover idle/active health, graceful drain,
+unexpected termination, real lease expiry/recovery, stale-owner rejection,
+retry/backoff, dead letters, duplicate events, automation idempotency and bounded
+supervisor restart. Resource inventory/cleanup validation is explicit and never
+executes deletion. The existing copied recovery database is expressly excluded.
+
+**Approval A remains pending.** No image/container build or startup, database
+connection/creation/migration, worker execution, fault injection or cleanup was
+performed. Pure source checks do not verify runtime isolation, actual recovery,
+production supervision or live GitHub acceptance. Review the harness, image
+provenance, exact resource plan and staged approval checkpoints in its README
+before authorizing any resource creation. Subsequent fixture, signal/fault,
+synthetic-automation and cleanup approvals are separate.
+
+Safe preparation verification is recorded in
+[VERIFICATION.md](../VERIFICATION.md#worker-recovery-harness-preparation--no-rehearsal-executed).
+All genuinely outstanding worker, key custody/decryption, rollback, disposable
+GitHub, browser/accessibility and production gates below remain open.
+
 ## Operational acceptance Step 8 — verified local PostgreSQL recovery rehearsal
 
 **Status: successfully verified for the tested local environment, as reported by
