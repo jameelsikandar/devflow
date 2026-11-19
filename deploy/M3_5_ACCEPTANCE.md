@@ -4,6 +4,34 @@
 at d21dc1a via [PR #1](https://github.com/jameelsikandar/devflow/pull/1). PR #1 GitHub Actions passed,
 as reported by the owner. M3.5 operational acceptance remains OPEN.**
 
+## Approval A0 — owner authorization recorded, no execution
+
+The owner explicitly authorizes reviewed immutable image/package provenance,
+isolated image build, fresh disposable Docker resources, disposable PostgreSQL
+bootstrap and eight migrations exclusively in the rehearsal database. A0 changes
+only the manifest approval boolean, related pure tests and authorization wording.
+The Node/PostgreSQL digests, pnpm integrity, Linux/amd64 target and evidence string
+remain unchanged. The evidence string retains its historical pending-review text;
+this section records the later authorization.
+
+The A0 update began on `audit/m3-5-operational-acceptance` at `569b499` with a clean
+working tree. Stop for owner review before creating the approval commit. No image
+build, Docker operation, database connection, Prisma command, migration, GitHub
+worker or recovery scenario has executed. Authorization is not successful
+execution or operational acceptance; runtime compatibility remains unverified.
+
+Executed A0 source-only checks: **160/160 isolated pure tests across six files**
+with Vite environment discovery disabled, full/core/rehearsal TypeScript, focused
+ESLint, Prettier, CommonJS/shell syntax and Git diff checks passed. The five added
+negative cases reject false, missing, null, string and numeric approval values.
+These results do not demonstrate a successful image build, bootstrap or migration.
+
+GitHub workers, recovery/fault scenarios, automation, external provider access,
+existing databases and deletion/cleanup remain unauthorized. Preserve DEV-002,
+connections, rules, task history and retained backup/recovery resources. Later
+scenario and cleanup approvals remain separate. M3.5 acceptance stays open;
+production deployment has not started.
+
 ## Current state — verification evidence reconciliation
 
 - DevFlow runs locally on Fedora Linux 44, with Docker PostgreSQL development and
@@ -52,19 +80,19 @@ isolation and harness code are committed locally as `942d87c` and `980de20` on t
 audit branch; this documentation reconciliation performs no staging or commit.
 See [verification evidence](../VERIFICATION.md#worker-rehearsal-safety-audit-corrections--source-verification-only).
 
-**Approval A remains blocked by unresolved image/package provenance.**
-`rehearsal/provenance.json` intentionally remains unapproved with null digests and
-integrity. Review and supply exact Node/PostgreSQL image digests, official pnpm
-11.9.0 tarball SHA-512 and review evidence through a later reviewed change. The
-harness refuses unresolved provenance; no registry lookup/build was performed.
+**Historical blocker, superseded by the Approval A0 authorization above:** this
+source-review stage had unresolved/unapproved image/package provenance. The owner
+subsequently supplied reviewed immutable pins and pnpm integrity, then explicitly
+authorized Approval A. The manifest now records that approval; unapproved inputs
+still fail closed. No build or operational rehearsal result follows from it.
 
 All real Docker/migration/worker/OS-signal scenarios remain **unexecuted**. Actual
 volume/mount behavior, guardian/engine compatibility and native/OS egress remain
 unverified. Scope is local rootful Docker with supported ext4/XFS/Btrfs storage;
 no malicious-host-root isolation, production systemd recovery or mid-transaction
-OS-kill proof is claimed. Focused source review is complete; provenance, the exact
-resource plan and [procedure](../rehearsal/README.md) still require approval before
-execution. This preparation does not close worker recovery, rollback,
+OS-kill proof is claimed. Focused source review is complete and the owner has
+now authorized the Approval A scope. The reviewed A0 commit, host prerequisites
+and exact [procedure](../rehearsal/README.md) must be confirmed before execution. This preparation does not close worker recovery, rollback,
 encryption-key, disposable
 GitHub, browser/accessibility or production gates. M3.5 operational acceptance
 remains open and production deployment has not started. No real Docker, database,
@@ -87,7 +115,8 @@ retry/backoff, dead letters, duplicate events, automation idempotency and bounde
 supervisor restart. Resource inventory/cleanup validation is explicit and never
 executes deletion. The existing copied recovery database is expressly excluded.
 
-**Approval A remains pending.** No image/container build or startup, database
+**Approval A is now owner-authorized; execution remains unverified.** No
+image/container build or startup, database
 connection/creation/migration, worker execution, fault injection or cleanup was
 performed. Pure source checks do not verify runtime isolation, actual recovery,
 production supervision or live GitHub acceptance. Review the harness, image

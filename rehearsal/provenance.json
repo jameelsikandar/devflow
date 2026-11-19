@@ -1,5 +1,5 @@
 {
-  "approved": false,
+  "approved": true,
   "nodeImage": "node:22-bookworm@sha256:69c6e263db01e9946c7743bbbe9f7b1ba0df384d27ec09e08e5832d6acd3daf3",
   "postgresImage": "postgres:18-alpine@sha256:fa1b61f5a4844f4d4b73c9b15716cfc75fe70c931f2d32723630f3b900056366",
   "pnpmIntegrity": "sha512-vWgtXQP+Ul73yf1ngMaITR51asTJyf4AxTh4KCQxDc+Q493E9Tg18G3669UIXkGFXgvLs7YN4qxburieUDbwOw==",

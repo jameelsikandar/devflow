@@ -34,7 +34,7 @@ describe('immutable official Node provenance references', () => {
     },
   );
 });
-it('retains the owner-supplied amd64 pins while refusing execution without approval', () => {
+it('accepts the owner-approved manifest with the exact reviewed amd64 pins', () => {
   const p = JSON.parse(readFileSync(new URL('provenance.json', import.meta.url), 'utf8'));
   expect(p.nodeImage).toBe(
     'node:22-bookworm@sha256:69c6e263db01e9946c7743bbbe9f7b1ba0df384d27ec09e08e5832d6acd3daf3',
@@ -46,6 +46,15 @@ it('retains the owner-supplied amd64 pins while refusing execution without appro
     'sha512-vWgtXQP+Ul73yf1ngMaITR51asTJyf4AxTh4KCQxDc+Q493E9Tg18G3669UIXkGFXgvLs7YN4qxburieUDbwOw==',
   );
   expect(p.platform).toBe('linux/amd64');
-  expect(p.approved).toBe(false);
-  expect(() => provenance(p)).toThrow('PROVENANCE_APPROVAL_REQUIRED');
+  expect(p.approved).toBe(true);
+  expect(provenance(p)).toBe(p);
 });
+
+it.each([false, undefined, null, 'true', 1])(
+  'rejects an otherwise complete manifest with non-approved approval value %s',
+  (approved) => {
+    const p = JSON.parse(readFileSync(new URL('provenance.json', import.meta.url), 'utf8'));
+    expect(() => provenance({ ...p, approved })).toThrow('PROVENANCE_APPROVAL_REQUIRED');
+    expect(p.approved).toBe(true); // Negative cases never mutate the owner-approved manifest.
+  },
+);

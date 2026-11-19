@@ -42,9 +42,9 @@ it('has no reset, seed, external PID kill, resource deletion or automatic worker
   expect(source('resources.cjs')).toContain('deletionAuthorized: false');
 });
 
-it('keeps owner-supplied provenance unapproved and checks package integrity', () => {
+it('records owner-approved provenance while retaining package integrity checks', () => {
   const p = JSON.parse(source('provenance.json'));
-  expect(p.approved).toBe(false);
+  expect(p.approved).toBe(true);
   expect(p.nodeImage).toMatch(/^node:22-bookworm@sha256:[a-f0-9]{64}$/);
   expect(p.postgresImage).toMatch(/^postgres:18-alpine@sha256:[a-f0-9]{64}$/);
   expect(p.platform).toBe('linux/amd64');

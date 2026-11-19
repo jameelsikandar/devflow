@@ -1,13 +1,20 @@
 # Isolated GitHub worker recovery rehearsal — TEST ONLY
 
-**Prepared, not executed. Approval A remains blocked.** No commands below are
-currently authorized. Production files, existing databases, connections, rules and
-DEV-002 are outside this harness. No cleanup, live GitHub or Groq access is allowed.
+**Prepared, not executed. Owner Approval A is recorded; A0 performs no execution.**
+The owner authorized reviewed provenance, isolated image build, fresh disposable
+Docker resources, disposable PostgreSQL bootstrap and eight migrations exclusively
+in the rehearsal database. This A0 change only records approval and checks source;
+stop for owner review before creating the approval commit or executing the
+procedure. GitHub workers, recovery/fault scenarios, automation, external provider
+access, existing databases and cleanup are not authorized. Production files,
+connections, rules and DEV-002 remain outside scope.
 
-## Approval A blockers and provenance
+## Approval A0 authorization and provenance
 
-`provenance.json` contains owner-supplied evidence and deliberately retains
-`approved: false`. The owner reports verification on Fedora x86_64 using official
+`provenance.json` now records the explicitly authorized `approved: true`. Its
+image digests, pnpm integrity, platform and evidence are unchanged. The retained
+evidence string describes its historical preparation state; this section records
+the subsequent owner authorization. The owner reports verification on Fedora x86_64 using official
 Docker registry metadata and an independent pnpm archive SHA-512 calculation.
 Codex has not independently retrieved or hashed those artifacts.
 
@@ -25,10 +32,11 @@ The major Node tag is permitted only with an immutable SHA-256 pin; no patch lab
 is inferred. Official repository names, Node 22 Bookworm, PostgreSQL 18, digest
 requirements and the explicit approval gate remain enforced. The `platform` field
 records the intended target; it is not a new automatic host architecture check.
-Runtime/image compatibility and the final owner review remain outstanding.
+Runtime/image compatibility remains unverified; the A0 source change still requires
+owner review before the approval commit.
 
-A later separately authorized change must record owner approval. Merely
-flipping the boolean does not satisfy acceptance. Build validation compares the
+The boolean records the owner's explicit authorization; it is not evidence of a
+successful build or rehearsal. Unapproved inputs remain rejected. Build validation compares the
 Node base argument with the approved manifest; the downloaded pnpm tarball must
 match its approved integrity before installation. Runtime and host admission also
 reject unresolved provenance. The worker image ID and PostgreSQL image ID are
@@ -39,8 +47,8 @@ The Fedora procedure supports only `/usr/bin/docker` with the **local rootful**
 `unix:///var/run/docker.sock` endpoint. Rootless/remote Docker is not silently
 substituted. Host helpers use a dedicated empty Docker configuration and minimal
 environment; they do not use the owner's Docker credential configuration. Image
-pull/build requires separate Approval A and network access to package/image
-registries. It never requires GitHub OAuth or AI credentials.
+pull/build falls within the owner-authorized Approval A scope and requires network
+access to package/image registries, but has not been executed. It never requires GitHub OAuth or AI credentials.
 
 ## Storage admission before PostgreSQL
 
@@ -190,16 +198,18 @@ git diff --check
 The normal `pnpm test` glob does not discover `rehearsal/*.test.ts`; do not substitute
 its result. No existing integration config (which loads `.env`) may run here.
 
-## Future Fedora procedure — NOT AUTHORIZED FOR EXECUTION
+## Future Fedora procedure — NOT EXECUTED; REVIEW APPROVAL COMMIT FIRST
 
-All steps require a separate approved scope and reviewed committed source. The
-reviewed preparation-only harness and unapproved provenance are not execution-ready.
+All steps require their approved scope and reviewed committed source. Approval A
+has been granted for build/storage/bootstrap only. A0 records that authorization;
+do not execute this procedure during A0 or before the approval commit is reviewed.
 Approvals: A build/storage/bootstrap; B synthetic fixtures/idle/processing; C owned
 signals/faults/recovery; D synthetic automation; E stopping resources, followed by
 separate itemized deletion approval. CLI scopes enforce deliberate selection; they
 do not replace owner authorization. Never run against an existing database.
 
-After owner review of provenance, review this sequence again before Approval A:
+After owner review of the approval commit, confirm host prerequisites and this
+exact sequence before proceeding with the authorized Approval A scope:
 
 ```bash
 set -euo pipefail
