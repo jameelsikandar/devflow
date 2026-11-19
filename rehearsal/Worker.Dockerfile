@@ -5,6 +5,8 @@ ARG NODE_IMAGE
 ENV CHECKPOINT_DISABLE=1 PRISMA_HIDE_UPDATE_MESSAGE=1
 WORKDIR /work
 COPY rehearsal ./rehearsal
+RUN chown root:node /work/rehearsal/entrypoint.sh \
+    && chmod 0640 /work/rehearsal/entrypoint.sh
 RUN node rehearsal/verify-provenance.cjs --base "$NODE_IMAGE" \
     && npm pack pnpm@11.9.0 --pack-destination /tmp \
     && node rehearsal/verify-provenance.cjs --tarball /tmp/pnpm-11.9.0.tgz \
