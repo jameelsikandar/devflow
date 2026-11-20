@@ -1,3 +1,10 @@
+import {
+  createProjectDocument,
+  getProjectDocument,
+  listProjectDocuments,
+  mutateProjectDocument,
+} from '@/lib/server/documents';
+import { documentId } from '@/lib/documents';
 import { githubRetentionImpact } from '@/lib/server/github-retention';
 import { revalidateGitHubConnection } from '@/lib/server/github-revalidation';
 import { githubOperationalHealth } from '@/lib/server/github-operational-health';
@@ -87,8 +94,10 @@ async function handler(request: Request, { params }: { params: Promise<{ path: s
   let operationalHealthRead = false;
   let connectionRevalidation = false;
   let retentionRead = false;
+  let documentRequest = false;
   try {
     const { path } = await params;
+    documentRequest = path[0] === 'projects' && path[2] === 'documents';
     operationalHealthRead =
       path.length === 4 &&
       path[0] === 'github' &&
@@ -270,6 +279,53 @@ async function handler(request: Request, { params }: { params: Promise<{ path: s
     if (!workspaceId) throw new HttpError(400, 'Select a workspace');
     const member = await membership(user.id, workspaceId);
     const actor = { userId: user.id, workspaceId, name: user.name };
+    if (path[0] === 'projects' && path[2] === 'documents' && path.length >= 3) {
+      const projectId = documentId.parse(path[1]);
+      const headers = { 'Cache-Control': 'private, no-store' };
+      if (path.length === 3 && method === 'GET')
+        return NextResponse.json(
+          await listProjectDocuments(actor, projectId, {
+            offset: url.searchParams.get('offset') ?? undefined,
+            archived: url.searchParams.get('archived') ?? undefined,
+          }),
+          { headers },
+        );
+      if (path.length === 3 && method === 'POST') {
+        await rateLimit(`documents:${user.id}`, 30);
+        return NextResponse.json(
+          await createProjectDocument(actor, projectId, await jsonBody(request)),
+          { status: 201, headers },
+        );
+      }
+      if (path.length === 3) throw new HttpError(405, 'Method not allowed');
+      const id = documentId.parse(path[3]);
+      if (path.length === 4 && method === 'GET')
+        return NextResponse.json(await getProjectDocument(actor, projectId, id), { headers });
+      const operation =
+        path.length === 4 && method === 'PATCH'
+          ? 'EDIT'
+          : path.length === 5 && path[4] === 'archive' && method === 'POST'
+            ? 'ARCHIVE'
+            : path.length === 6 && path[4] === 'grants' && method === 'PUT'
+              ? 'GRANT'
+              : path.length === 6 && path[4] === 'grants' && method === 'DELETE'
+                ? 'REVOKE'
+                : null;
+      if (!operation) throw new HttpError(405, 'Method not allowed');
+      await rateLimit(`documents:${user.id}`, 30);
+      return NextResponse.json(
+        await mutateProjectDocument(
+          actor,
+          projectId,
+          id,
+          operation,
+          await jsonBody(request),
+          path[5],
+        ),
+        { headers },
+      );
+    }
+
     if (route === 'ai/config' && method === 'GET') return NextResponse.json(agentConfiguration());
     if (route === 'ai/conversations' && method === 'GET')
       return NextResponse.json(await listConversations(actor));
@@ -738,9 +794,9 @@ async function handler(request: Request, { params }: { params: Promise<{ path: s
     throw new HttpError(404, 'Endpoint not found');
   } catch (error) {
     const response = errorResponse(error);
-    if (operationalHealthRead || connectionRevalidation || retentionRead)
+    if (operationalHealthRead || connectionRevalidation || retentionRead || documentRequest)
       response.headers.set('Cache-Control', 'no-store');
     return response;
   }
 }
-export { handler as GET, handler as POST, handler as PATCH, handler as DELETE };
+export { handler as GET, handler as POST, handler as PATCH, handler as DELETE, handler as PUT };
