@@ -13,6 +13,7 @@ import {
   ChevronsUpDown,
   Command,
   FolderKanban,
+  FileText,
   GitBranch,
   GitFork as Github,
   LayoutDashboard,
@@ -40,10 +41,12 @@ import { TaskDialog, CreateProject, CreateTask } from './task-dialog';
 import { Assistant, GitHub, Settings } from './integrations';
 import { CommandPalette } from './palette';
 import { Roadmap } from './roadmap';
+import { ProjectDocuments } from './project-documents';
 const nav = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
   { id: 'my-tasks', label: 'Tasks', icon: ListTodo },
   { id: 'projects', label: 'Projects', icon: FolderKanban },
+  { id: 'documents', label: 'Documents', icon: FileText },
   { id: 'board', label: 'Board', icon: ChartNoAxesCombined },
   { id: 'roadmap', label: 'Roadmap', icon: GitBranch },
   { id: 'analytics', label: 'Analytics', icon: Activity },
@@ -51,6 +54,7 @@ const nav = [
 const names: Record<View, string> = {
   overview: 'Overview',
   projects: 'Projects',
+  documents: 'Documents',
   board: 'Board',
   roadmap: 'Roadmap',
   'my-tasks': 'Tasks',
@@ -489,6 +493,7 @@ export function DevFlow({ user }: { user: Person }) {
                               (
                                 {
                                   projects: 'Big ideas, moving forward. One project at a time.',
+                                  documents: 'Project knowledge, with clear ownership and access.',
                                   board: 'A clear view of what’s next, and what’s moving.',
                                   roadmap: 'Connect the work. See the path to delivery.',
                                   analytics: 'Understand your momentum. Make every week better.',
@@ -599,6 +604,14 @@ export function DevFlow({ user }: { user: Person }) {
                           />
                         )}
                       </>
+                    )}
+                    {view === 'documents' && (
+                      <ProjectDocuments
+                        key={data.workspace.id}
+                        data={data}
+                        selectedProjectId={projectId}
+                        onProjectChange={setProject}
+                      />
                     )}
                     {view === 'analytics' && <Analytics data={data} />}
                     {view === 'roadmap' && (

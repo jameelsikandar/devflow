@@ -4,6 +4,7 @@ import { persist } from 'zustand/middleware';
 export type View =
   | 'overview'
   | 'projects'
+  | 'documents'
   | 'board'
   | 'roadmap'
   | 'my-tasks'
