@@ -48,21 +48,55 @@ The original general Playwright configuration is unchanged. The journey skips in
 ordinary runs without the explicit acceptance marker, and checks the focused
 configuration before fixture creation.
 
-## Isolated source snapshot
+## Startup-path correction and fresh snapshot
 
-Prepared directory: `/tmp/devflow-m41-browser-1yrfe5h8`.
+The first owner-authorized attempt failed before Next started: Playwright resolved
+`node_modules/next/dist/bin/next` relative to `e2e/`. The focused configuration now
+sets `webServer.cwd: process.cwd()` explicitly. Run Playwright from the snapshot
+root, the same directory checked by the environment guards. Next's `.next` stays
+inside that new snapshot. No startup success is claimed by the static correction.
 
-- Application source comes from `git archive b50c73f`; all `.env*` files were excluded,
-  including the safe example. No `.git`, `.next`, database, report, backup or rehearsal
-  evidence was copied.
-- Two reviewed candidate files are overlaid: `e2e/documents.spec.ts` and
-  `e2e/documents.config.ts`. These are uncommitted changes, not claimed to exist in
-  the baseline commit. `m41-snapshot.json` records the full revision and SHA-256s.
-- `node_modules` is a symlink to the existing installed dependencies. No install,
-  generation or rebuild of dependencies is permitted by this procedure. Do not run
-  pnpm install, Prisma generation, migrations, or a worker from the snapshot.
-- Next runs from this directory and creates its own `.next`. Existing development
-  server output remains separate. The prepared snapshot is temporary, not a release.
+The failed `/tmp/devflow-m41-browser-1yrfe5h8`, its log and
+`browser-acceptance.STARTED` marker are retained evidence. **Never modify or reuse
+that directory.** This procedure creates a different directory from committed
+baseline `038c134` plus the reviewed correction. No backup, integration evidence
+or M3.5 resource is read, copied or altered.
+
+After source review, prepare a new snapshot (no server/database operation):
+
+```bash
+set -euo pipefail
+set +x
+cd ~/codegrid/codex-projects/test-project
+test "$(git branch --show-current)" = feature/m4-project-documents
+test "$(git rev-parse --short=7 HEAD)" = 038c134
+umask 077
+m41_snapshot="$(mktemp -d /tmp/devflow-m41-browser-cwd-XXXXXXXX)"
+git archive --format=tar 038c134 | tar -xf - -C "$m41_snapshot" --exclude='.env*'
+# Explicit reviewed overlays only; never copy the working tree or old snapshot.
+cp e2e/documents.config.ts "$m41_snapshot/e2e/documents.config.ts"
+cp e2e/documents-startup.check.mjs "$m41_snapshot/e2e/documents-startup.check.mjs"
+cp docs/M4_1_BROWSER_ACCEPTANCE.md "$m41_snapshot/docs/M4_1_BROWSER_ACCEPTANCE.md"
+ln -s "$PWD/node_modules" "$m41_snapshot/node_modules"
+git rev-parse HEAD > "$m41_snapshot/source-revision.txt"
+(
+  cd "$m41_snapshot"
+  sha256sum e2e/documents.config.ts e2e/documents-startup.check.mjs \
+    docs/M4_1_BROWSER_ACCEPTANCE.md > reviewed-overlays.sha256
+  sha256sum -c reviewed-overlays.sha256
+  test ! -e .next
+  test ! -e browser-acceptance.STARTED
+  node e2e/documents-startup.check.mjs
+)
+printf 'New snapshot: %s\n' "$m41_snapshot"
+```
+
+Stop if the branch/baseline changed; prepare a reviewed command update rather than
+bypassing the checks. The unchanged spec is committed in `038c134`; the three
+explicit overlays are candidate changes, not claimed to be in that commit.
+`node_modules` reuses installed dependencies through a symlink. Do not install,
+generate, migrate or rebuild dependencies from this snapshot. There is no copied
+`.env*`, `.git`, `.next`, database, backup, report or private evidence.
 
 The focused configuration intentionally avoids `dotenv/config`, refuses real root
 `.env` files and checks generated Prisma metadata for environment-file paths
@@ -72,13 +106,13 @@ than removing this guard. Execute in the snapshot with the clean environment bel
 
 ## Approval required before execution
 
-No server or browser was started during preparation. Owner approval must explicitly
-cover starting the isolated Next server on `127.0.0.1:3101`, browser execution and
+No server or browser was started while preparing this correction. Owner approval
+must explicitly cover starting the isolated Next server on `127.0.0.1:3101`, browser execution and
 synthetic fixture writes to **localhost:5433/devflow_test/public only**.
 
 Preconditions:
 
-1. Review all three candidate files and the snapshot overlay hashes. If files have
+1. Review the three correction files and new snapshot overlay hashes. If files
    changed, recreate/review the snapshot before execution; do not silently mix states.
 2. Confirm the previously verified nine migrations and test database are still the
    intended target. This procedure does not migrate or prepare a database.
@@ -94,7 +128,7 @@ Preconditions:
 ### Safe discovery only — no server, browser or database connection
 
 ```bash
-cd /tmp/devflow-m41-browser-1yrfe5h8
+cd "$m41_snapshot"
 env -i PATH=/usr/bin:/bin HOME=/tmp NEXT_TELEMETRY_DISABLED=1 \
   M41_BROWSER_ACCEPTANCE=devflow_test-only \
   /usr/bin/node node_modules/@playwright/test/cli.js test \
@@ -115,35 +149,54 @@ child receives only the explicit environment below. Do not enable shell tracing.
 ```bash
 set -euo pipefail
 set +x
-cd /tmp/devflow-m41-browser-1yrfe5h8
+: "${m41_snapshot:?Use the newly prepared and reviewed snapshot path}"
+cd "$m41_snapshot"
+sha256sum -c reviewed-overlays.sha256
+node e2e/documents-startup.check.mjs
 test ! -e .env
 test ! -e .env.local
 test ! -e .env.development
 test ! -e .env.development.local
+test ! -e browser-acceptance.STARTED
 read -rsp 'Approved devflow_test URL (hidden): ' m41_test_url
 printf '\n'
 test -n "$m41_test_url"
-# Keep the URL out of OS command arguments: populate a child environment through stdin.
+m41_status=0
+# URL travels through stdin, never command arguments. A run is consumed even on failure.
 printf '%s' "$m41_test_url" | env -i PATH=/usr/bin:/bin HOME=/home/jemi \
   NEXT_TELEMETRY_DISABLED=1 M41_BROWSER_ACCEPTANCE=devflow_test-only \
   /usr/bin/node -e '
     const fs = require("node:fs");
     const cp = require("node:child_process");
     process.env.TEST_DATABASE_URL = fs.readFileSync(0, "utf8");
+    const marker = fs.openSync("browser-acceptance.STARTED", "wx", 0o600);
+    fs.writeSync(marker, JSON.stringify({ startedAt: new Date().toISOString() }) + "\n");
+    fs.closeSync(marker);
+    const log = fs.openSync("browser-acceptance.log", "wx", 0o600);
     const result = cp.spawnSync(process.execPath, [
       "node_modules/@playwright/test/cli.js", "test",
       "--config", "e2e/documents.config.ts"
-    ], { env: process.env, stdio: "inherit" });
+    ], { env: process.env, stdio: ["ignore", log, log] });
+    fs.closeSync(log);
+    fs.writeFileSync("browser-acceptance.RESULT.json", JSON.stringify({
+      exitCode: result.status, signal: result.signal,
+      launchFailed: Boolean(result.error), finishedAt: new Date().toISOString()
+    }) + "\n", { flag: "wx", mode: 0o600 });
+    console.log("Browser attempt finished; inspect private evidence in this new snapshot.");
     if (result.error || result.signal || result.status !== 0) process.exit(1);
-  '
+  ' || m41_status=$?
 unset m41_test_url
+test "$m41_status" -eq 0
 ```
 
 `HOME` is passed to the child only to find the owner's already-installed browser
 cache. The procedure does not copy home files. OS-level environment/process access
 is not a secrets vault; run only under the trusted local account. Do not inspect or
-share process environments. On a failed run, clear `m41_test_url` manually if Bash
-exits before the final `unset`.
+share process environments. If the terminal is interrupted before `unset`, clear
+`m41_test_url` manually.
+The exclusive `wx` marker prevents a second attempt in the same directory. On any
+failure retain the marker, private log and result; never remove them to retry.
+Any later retry needs a new reviewed snapshot and owner approval.
 
 The configuration checks PostgreSQL protocol, local hostname, exact port 5433,
 exact decoded database name `devflow_test`, public schema and no other URL options
@@ -192,9 +245,9 @@ Playwright owns only the server it launches; do not signal arbitrary processes.
 Failures are evidence to investigate, not acceptance. No production readiness,
 real-provider acceptance or full accessibility claim follows from these tests.
 
-## Preparation checks
+## Historical preparation checks
 
-Executed during preparation:
+Executed for the original preparation, not a new browser result:
 
 - Full TypeScript (`--noEmit --incremental false`) and core TypeScript passed.
 - Focused ESLint and three-file Prettier checks passed.
@@ -209,3 +262,14 @@ Executed during preparation:
 No unit/integration suite, build, server, browser, migration, provider call or
 database-writing operation was executed during preparation. Browser behavior,
 visual quality and persistence remain unverified by this new suite.
+
+## Startup correction verification
+
+The correction is limited to explicit startup cwd, a source-AST regression check
+and these revised instructions. The check requires an explicit root cwd, the
+unchanged Next CLI command/port, no server reuse and a readable installed CLI file.
+It reads source/metadata only and does not import the application or start Next.
+Formatting, lint, TypeScript and fresh-snapshot discovery are reported separately
+with the correction. Only an authorized real run can establish successful startup,
+focus behavior, persistence and browser acceptance. The failed attempt is not a
+passing browser test and does not consume or replace earlier database evidence.

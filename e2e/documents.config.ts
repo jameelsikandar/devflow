@@ -55,6 +55,8 @@ export default defineConfig({
   reporter: [['list'], ['html', { outputFolder: 'playwright-report/documents', open: 'never' }]],
   use: { baseURL, trace: 'retain-on-failure', screenshot: 'only-on-failure' },
   webServer: {
+    // Playwright otherwise defaults to the configuration directory (e2e/).
+    cwd: process.cwd(),
     command: 'node node_modules/next/dist/bin/next dev --webpack --hostname 127.0.0.1 --port 3101',
     url: `${baseURL}/login`,
     reuseExistingServer: false,
