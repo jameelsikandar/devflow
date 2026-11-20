@@ -80,6 +80,72 @@ describe('closed rehearsal target and command policy', () => {
     expect(p.command(['abort-owned', '--approve', 'faults']).operation).toBe('abort-owned');
   });
 });
+describe('Docker capability metadata', () => {
+  it('accepts the exact canonical metadata reported by Docker without altering it', () => {
+    const v = resources();
+    expect(v.resources.admission.capAdd).toEqual(['CAP_CHOWN']);
+    expect(v.resources.admission.capDrop).toEqual(['ALL']);
+    expect(v.resources.controller.capAdd).toBeNull();
+    expect(v.resources.controller.capDrop).toEqual(['ALL']);
+    expect(v.resources.postgres.capAdd).toBeNull();
+    expect(v.resources.postgres.capDrop).toBeNull();
+    for (const kind of ['admission', 'controller', 'postgres']) {
+      expect(v.resources[kind].pidMode).toBe('');
+      expect(v.resources[kind].ipcMode).toBe('private');
+    }
+    const before = JSON.stringify(v);
+    expect(() => p.inventory(v, run)).not.toThrow();
+    expect(JSON.stringify(v)).toBe(before);
+  });
+  it('retains compatibility with exactly one unprefixed CHOWN capability', () => {
+    const v = resources();
+    v.resources.admission.capAdd = ['CHOWN'];
+    expect(() => p.inventory(v, run)).not.toThrow();
+  });
+  it.each(
+    [
+      [],
+      null,
+      undefined,
+      false,
+      'CAP_CHOWN',
+      [''],
+      ['CAP_SYS_ADMIN'],
+      ['cap_chown'],
+      ['CAP_CAP_CHOWN'],
+      ['CAP_CHOWN', 'CAP_SYS_ADMIN'],
+      ['CHOWN', 'CAP_SYS_ADMIN'],
+      ['CAP_CHOWN', 'CHOWN'],
+      ['CAP_CHOWN', 'CAP_CHOWN'],
+      ['CAP_CHOWN,CHOWN'],
+    ].map((capAdd) => ({ capAdd })),
+  )('rejects malformed, missing or extra admission capability metadata $capAdd', ({ capAdd }) => {
+    const v = resources();
+    v.resources.admission.capAdd = capAdd;
+    expect(() => p.inventory(v, run)).toThrow('CAPABILITIES');
+  });
+  for (const kind of ['admission', 'controller']) {
+    it.each(
+      [null, undefined, [], false, 'ALL', ['CAP_CHOWN'], ['ALL', 'CHOWN'], ['ALL', 'ALL']].map(
+        (capDrop) => ({ capDrop }),
+      ),
+    )(`requires exactly the ALL drop for ${kind}: $capDrop`, ({ capDrop }) => {
+      const v = resources();
+      v.resources[kind].capDrop = capDrop;
+      expect(() => p.inventory(v, run)).toThrow('CAPABILITIES');
+    });
+  }
+  for (const kind of ['controller', 'postgres']) {
+    it.each([['CAP_CHOWN'], ['CAP_SYS_ADMIN'], ['']].map((capAdd) => ({ capAdd })))(
+      `rejects any added capability for ${kind}: $capAdd`,
+      ({ capAdd }) => {
+        const v = resources();
+        v.resources[kind].capAdd = capAdd;
+        expect(() => p.inventory(v, run)).toThrow('CAPABILITIES');
+      },
+    );
+  }
+});
 describe('resource ownership and cleanup validation', () => {
   it('accepts the dedicated inventory and redacts unknown fields', () => {
     const v = resources();

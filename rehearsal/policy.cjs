@@ -222,12 +222,19 @@ function inventory(value, runId, cleanup = false) {
   for (const kind of ['postgres', 'controller', 'admission']) {
     const c = value.resources[kind];
     insist(c.pidMode === '' && c.ipcMode === 'private', 'HOST_NAMESPACE');
+    const added = c.capAdd ?? [];
     insist(
-      Array.isArray(c.capAdd || []) &&
-        (c.capAdd || []).join() === (kind === 'admission' ? 'CHOWN' : ''),
+      Array.isArray(added) &&
+        (kind === 'admission'
+          ? added.length === 1 && ['CHOWN', 'CAP_CHOWN'].includes(added[0])
+          : added.length === 0),
       'CAPABILITIES',
     );
-    if (kind !== 'postgres') insist((c.capDrop || []).includes('ALL'), 'CAPABILITIES');
+    if (kind !== 'postgres')
+      insist(
+        Array.isArray(c.capDrop) && c.capDrop.length === 1 && c.capDrop[0] === 'ALL',
+        'CAPABILITIES',
+      );
   }
   insist(
     JSON.stringify(value.resources.postgres.command) === JSON.stringify(PG_COMMAND),

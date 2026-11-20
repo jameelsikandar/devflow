@@ -58,8 +58,8 @@ function fixtureResources() {
       user: key === 'admission' ? '0' : key === 'controller' ? 'node' : '',
       pidMode: '',
       ipcMode: 'private',
-      capAdd: key === 'admission' ? ['CHOWN'] : [],
-      capDrop: ['ALL'],
+      capAdd: key === 'admission' ? ['CAP_CHOWN'] : null,
+      capDrop: key === 'postgres' ? null : ['ALL'],
       networkMode: key === 'admission' ? 'none' : n.network,
       imageId: key === 'postgres' ? storage.postgresImageId : storage.probe.imageId,
       mounts:
