@@ -5,8 +5,6 @@ ARG NODE_IMAGE
 ENV CHECKPOINT_DISABLE=1 PRISMA_HIDE_UPDATE_MESSAGE=1
 WORKDIR /work
 COPY rehearsal ./rehearsal
-RUN chown root:node /work/rehearsal/entrypoint.sh \
-    && chmod 0640 /work/rehearsal/entrypoint.sh
 RUN node rehearsal/verify-provenance.cjs --base "$NODE_IMAGE" \
     && npm pack pnpm@11.9.0 --pack-destination /tmp \
     && node rehearsal/verify-provenance.cjs --tarball /tmp/pnpm-11.9.0.tgz \
@@ -21,6 +19,8 @@ RUN DATABASE_URL=postgresql://build:build@127.0.0.1:1/unreachable pnpm db:genera
     && node node_modules/typescript/bin/tsc -p rehearsal/tsconfig.json \
     && mkdir -p /opt/devflow-rehearsal /evidence /admission/data /admission/evidence \
     && printf '%s\n' '{"version":1,"root":"/work","nodeMajor":22}' > /opt/devflow-rehearsal/image.json \
+    && chown -R root:node /work /opt/devflow-rehearsal \
+    && chmod -R u=rwX,g=rX,o= /work /opt/devflow-rehearsal \
     && chown node:node /evidence
 ENV HOME=/tmp
 USER node

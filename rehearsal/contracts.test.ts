@@ -13,6 +13,37 @@ it('builds explicit source paths with new dependencies and a new generated clien
   expect(source('Worker.Dockerfile.dockerignore')).toContain('**/.env.*');
   expect(source('vitest.config.ts')).toContain('envDir: false');
 });
+it('normalizes all copied and generated runtime assets for the non-root user after generation', () => {
+  const docker = source('Worker.Dockerfile');
+  const ownership = 'chown -R root:node /work /opt/devflow-rehearsal';
+  const permissions = 'chmod -R u=rwX,g=rX,o= /work /opt/devflow-rehearsal';
+  expect(docker).toContain(ownership);
+  expect(docker).toContain(permissions);
+  const normalize = docker.indexOf(ownership);
+  for (const prerequisite of [
+    'pnpm db:generate',
+    'tsc -p rehearsal/tsconfig.json',
+    '> /opt/devflow-rehearsal/image.json',
+  ]) {
+    expect(docker.indexOf(prerequisite)).toBeGreaterThan(-1);
+    expect(docker.indexOf(prerequisite)).toBeLessThan(normalize);
+  }
+  expect(docker.lastIndexOf('COPY ')).toBeLessThan(normalize);
+  expect(docker.indexOf(permissions)).toBeGreaterThan(normalize);
+  expect(docker.indexOf(permissions)).toBeLessThan(docker.indexOf('USER node'));
+  expect(docker).toContain('ENTRYPOINT ["/bin/sh", "/work/rehearsal/entrypoint.sh"]');
+});
+it('preserves native-engine execute bits without granting runtime source write access', () => {
+  const docker = source('Worker.Dockerfile');
+  // X retains native engine/bin execution and directory traversal. g=rX gives
+  // node read/traverse access; only root owns/writes runtime code. No runtime chmod.
+  expect(docker).toContain('chmod -R u=rwX,g=rX,o= /work /opt/devflow-rehearsal');
+  expect(docker).not.toMatch(/chmod[^\n]*(?:777|a\+w|o\+w)|chown -R node/);
+  expect(docker).not.toMatch(/chmod -R (?:0?640|0?644)/);
+  expect(docker).toContain('chown node:node /evidence');
+  expect(docker.slice(docker.indexOf('USER node'))).not.toMatch(/chmod|chown|USER root/);
+  expect(source('entrypoint.sh')).not.toMatch(/chmod|chown/);
+});
 it('validates environment before compiling/loading any application entry point', () => {
   const child = source('child.cjs');
   expect(child.indexOf('const config = bootstrap()')).toBeLessThan(
