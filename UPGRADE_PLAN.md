@@ -1,5 +1,26 @@
 # DevFlow 2.0 upgrade
 
+## Current M4.1 scope — project document management
+
+Work is on `feature/m4-project-documents`, baseline `efd00bb`. M4.1 metadata,
+private-by-default ownership/reader/editor permissions, scoped APIs and Documents
+UI are implemented for review. Additive migration
+`202611200001_project_documents` is prepared but not applied to any database.
+Collaboration/editor infrastructure, body storage, comments, presence and version
+history remain outside this approved slice. See [M4.1 details](PROJECT_DOCUMENTS.md).
+
+- [x] Schema/migration files, validation and transactional scope/version checks.
+- [x] Create/list/view/rename/archive and owner/admin-managed member grants.
+- [x] Existing-shell UI, confirmation, empty/loading/error states and pure tests.
+- [x] 522 unit/HTTP/DOM tests, type/lint/schema checks and isolated webpack build.
+- [ ] Owner approval to migrate `devflow_test`; execute the 11 new SQL cases and
+      existing integration regressions. Development migration requires separate approval.
+- [ ] Browser/visual acceptance after approved isolated database setup.
+- [ ] Focused commits if Git metadata permissions permit; no push/merge authorized.
+
+This section supersedes older statements that no M4 work is approved. Historical
+M3.5 records and its still-open production acceptance gates remain unchanged.
+
 Current implementation: M1, M2 and M3.1–M3.4. Current approved work: **M3.5 —
 operational acceptance and hardening**, step 9 (deployment and operational acceptance runbooks).
 M3.5 is not complete. The current status and checklist below supersede older

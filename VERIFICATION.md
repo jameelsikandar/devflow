@@ -1,5 +1,38 @@
 # DevFlow local verification
 
+## M4.1 document management — current implementation verification
+
+Branch `feature/m4-project-documents`, baseline `efd00bb`; clean tree before work.
+Only the new migration file/schema, document services/API/UI, related tests and
+documentation change. No application/test database was queried or migrated and no
+M3.5 rehearsal resource/evidence was accessed. No external provider calls ran.
+
+| Check                           | Actual result                                                                                                                                                        |
+| ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Focused new unit/HTTP/DOM cases | 37 passed across three files                                                                                                                                         |
+| Full unit/HTTP/DOM suite        | 522 passed across 53 files; temporary config with `envDir: false`, synthetic URLs/blank provider credentials                                                         |
+| Types                           | Full, core and worker TypeScript passed with no emit                                                                                                                 |
+| ESLint                          | Passed                                                                                                                                                               |
+| Schema/client                   | Isolated schema copy validated; Prisma 6.19 client generated from that copy against installed dependencies, with an unreachable synthetic URL; no database operation |
+| Formatting                      | Prisma formatter and changed-file Prettier passed; Prettier has no Prisma parser here                                                                                |
+| Production                      | Installed Next `build --webpack` passed in credential-free source snapshot `/tmp/devflow-m4-build-9z6kgoyp`                                                          |
+| PostgreSQL integration          | Not executed; 11 new cases authored. Explicit migration/fixture-write approval for `devflow_test` required first                                                     |
+| Playwright/visual               | Not executed; database-backed runtime acceptance remains pending                                                                                                     |
+
+Schema generation initially failed to resolve the installed client from the
+isolated directory; linking its dependency directory fixed resolution without an
+install. An initial snapshot build omitted tests/database-config.ts imported by
+scripts and failed type checking; completing the snapshot fixed it without
+bypassing build checks. Final passing results above supersede those failed attempts.
+The isolated Prisma copy ran outside repository env discovery. No secrets were
+printed and no engine/package download from external services was required.
+
+The normal integration configuration loads local environment and performs database
+writes, so it was not invoked, even for discovery. Source-level test counts are not
+SQL passes. No database reset, seed, migration resolution, worker launch or GitHub
+action ran. See [document verification and authorization prerequisites](PROJECT_DOCUMENTS.md#fedora-local-database-verification--requires-separate-approval-first).
+Historical M3.5 and typography results below keep their original scope.
+
 ## Worker rehearsal safety-audit corrections — source verification only
 
 Preparation began on `audit/m3-5-operational-acceptance` at `8c5bc07`.

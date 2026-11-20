@@ -1,5 +1,28 @@
 # DevFlow 2.0 — implementation report
 
+## M4.1 — implementation prepared; database acceptance pending
+
+Baseline `efd00bb`, branch `feature/m4-project-documents`. Added project document
+metadata, private-by-default ownership and explicit reader/editor access, with
+workspace admin override. APIs create/list/view/rename/archive and manage grants;
+the Documents navigation view uses existing components and typography. Metadata
+versions prevent stale updates; composite foreign keys prevent cross-scope grants.
+No document body/editor, collaboration process, new dependency or task/GitHub
+behavior change is included.
+
+Verification executed: **522/522 unit/HTTP/DOM tests across 53 files**, including
+37 new cases; full/core/worker types, lint, schema validation/client generation,
+formatting and isolated webpack production build passed. Eleven real-PostgreSQL
+integration cases are implemented but not executed: migration/test-write approval
+is required. Browser/visual verification also remains unexecuted. No existing
+schema/data or M3.5 rehearsal resources were touched.
+
+Migration `202611200001_project_documents` is additive and unapplied. The running
+application requires owner-approved migration before document persistence can be
+accepted. [PROJECT_DOCUMENTS.md](PROJECT_DOCUMENTS.md) records APIs, permissions,
+limits and safe local verification prerequisites. Git commits are pending normal
+Git-write availability; no push or merge is authorized.
+
 ## Scope delivered
 
 The audit, roadmap/dependency implementation (Milestone 1), and agentic AI project
