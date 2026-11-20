@@ -47,6 +47,8 @@ model User {
   githubRepositories          GitHubRepositoryConnection[]
   githubEnrichmentConnections GitHubRepositoryConnection[] @relation("EnrichmentAuthorizer")
   aiConversations             AIConversation[]
+  ownedDocuments              ProjectDocument[]            @relation("DocumentOwner")
+  updatedDocuments            ProjectDocument[]            @relation("DocumentUpdater")
 }
 
 model Session {
@@ -83,6 +85,8 @@ model WorkspaceMember {
   createdAt   DateTime  @default(now())
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  documentGrants DocumentGrant[]
 
   @@unique([workspaceId, userId])
   @@index([userId])
@@ -121,6 +125,8 @@ model Project {
   githubWorkflowRules     GitHubWorkflowRule[]
   githubWorkflowRevisions GitHubWorkflowRuleRevision[]
   githubWorkerSignals     GitHubWorkerSignal[]
+
+  documents ProjectDocument[]
 
   @@unique([workspaceId, id])
   @@index([workspaceId, archivedAt])
@@ -670,4 +676,47 @@ model GitHubWorkerSignal {
 
   @@id([runId, connectionId])
   @@index([workspaceId, projectId, connectionId, heartbeatAt], map: "GitHubWorkerSignal_scope_heartbeat_idx")
+}
+
+// Metadata only. Collaborative body storage is deliberately deferred to M4.2.
+enum DocumentAccess {
+  READER
+  EDITOR
+}
+
+model ProjectDocument {
+  id          String          @id @default(cuid())
+  workspaceId String
+  projectId   String
+  ownerId     String
+  updatedById String?
+  title       String
+  summary     String          @default("")
+  version     Int             @default(0)
+  archivedAt  DateTime?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  project     Project         @relation(fields: [workspaceId, projectId], references: [workspaceId, id], onDelete: Cascade)
+  owner       User            @relation("DocumentOwner", fields: [ownerId], references: [id], onDelete: Restrict)
+  updatedBy   User?           @relation("DocumentUpdater", fields: [updatedById], references: [id], onDelete: SetNull)
+  grants      DocumentGrant[]
+
+  @@unique([workspaceId, projectId, id])
+  @@index([workspaceId, projectId, archivedAt, createdAt, id], map: "ProjectDocument_scope_archive_created_idx")
+  @@index([ownerId])
+}
+
+model DocumentGrant {
+  workspaceId String
+  projectId   String
+  documentId  String
+  userId      String
+  access      DocumentAccess
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  document    ProjectDocument @relation(fields: [workspaceId, projectId, documentId], references: [workspaceId, projectId, id], onDelete: Cascade)
+  member      WorkspaceMember @relation(fields: [workspaceId, userId], references: [workspaceId, userId], onDelete: Cascade)
+
+  @@id([documentId, userId])
+  @@index([workspaceId, userId])
 }
