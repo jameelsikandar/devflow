@@ -4,15 +4,17 @@ import { openAppNavigation, submitRegistration, waitForWorkspace } from './helpe
 import type { ProjectDocumentView } from '../src/lib/documents';
 
 async function documents(page: Page, projectId: string) {
-  await openAppNavigation(page);
-  await page
-    .getByRole('navigation', { name: 'Main navigation', exact: true })
-    .getByRole('button', { name: 'Documents', exact: true })
-    .click();
-  await page
-    .getByRole('combobox', { name: 'Document project', exact: true })
-    .selectOption(projectId);
-  return page.getByRole('region', { name: 'Project documents', exact: true });
+  return test.step('Open project document list', async () => {
+    await openAppNavigation(page);
+    await page
+      .getByRole('navigation', { name: 'Main navigation', exact: true })
+      .getByRole('button', { name: 'Documents', exact: true })
+      .click();
+    await page
+      .getByRole('combobox', { name: 'Document project', exact: true })
+      .selectOption(projectId);
+    return page.getByRole('region', { name: 'Project documents', exact: true });
+  });
 }
 async function keyboardDialog(page: Page, dialog: Locator) {
   await expect(dialog).toBeVisible();
@@ -30,15 +32,53 @@ async function keyboardDialog(page: Page, dialog: Locator) {
   }
 }
 async function register(page: Page, name: string, email: string) {
-  await page.goto('/login');
-  await page.getByRole('button', { name: 'Create an account', exact: true }).click();
-  await page.getByLabel('Full name').fill(name);
-  await page.getByLabel('Email address').fill(email);
-  await page.getByLabel('Password', { exact: true }).fill('synthetic-m41-browser-password');
-  await submitRegistration(page);
-  const response = await page.request.get('/api/me');
-  expect(response.status()).toBe(200);
-  return (await response.json()) as { user: { id: string }; workspaces: { id: string }[] };
+  return test.step(`Register synthetic account: ${name}`, async () => {
+    await page.goto('/login');
+    await page.getByRole('button', { name: 'Create an account', exact: true }).click();
+    await page.getByLabel('Full name').fill(name);
+    await page.getByLabel('Email address').fill(email);
+    await page.getByLabel('Password', { exact: true }).fill('synthetic-m41-browser-password');
+    await submitRegistration(page);
+    const response = await page.request.get('/api/me');
+    expect(response.status()).toBe(200);
+    return (await response.json()) as { user: { id: string }; workspaces: { id: string }[] };
+  });
+}
+
+async function grantDocumentAccess(
+  page: Page,
+  detail: Locator,
+  endpoint: string,
+  memberId: string,
+  access: 'READER' | 'EDITOR',
+) {
+  await test.step(`Grant ${access === 'READER' ? 'Reader' : 'Editor'} access to Robin Reader`, async () => {
+    const member = detail.getByRole('combobox', { name: 'Workspace member', exact: true });
+    await expect(member).toBeVisible();
+    await expect(member.getByRole('option', { name: 'Robin Reader', exact: true })).toHaveAttribute(
+      'value',
+      memberId,
+    );
+    await member.selectOption(memberId);
+    await expect(member).toHaveValue(memberId);
+    const permission = detail.getByRole('combobox', { name: 'Permission', exact: true });
+    await permission.selectOption(access);
+    await expect(permission).toHaveValue(access);
+    const save = detail.getByRole('button', { name: 'Save access', exact: true });
+    await expect(save).toBeEnabled();
+    const grantURL = new URL(endpoint, page.url());
+    grantURL.pathname += `/grants/${encodeURIComponent(memberId)}`;
+    const [response] = await Promise.all([
+      page.waitForResponse((r) => r.url() === grantURL.href && r.request().method() === 'PUT'),
+      save.click(),
+    ]);
+    expect(response.status(), 'Document grant PUT must succeed').toBe(200);
+    await expect(
+      detail.getByText(`Robin Reader · ${access === 'READER' ? 'Reader' : 'Editor'}`, {
+        exact: true,
+      }),
+    ).toBeVisible();
+  });
 }
 
 test.skip(
@@ -144,20 +184,22 @@ test('document lifecycle, member permissions and foreign workspace isolation', a
     const memberEmail = `m41-reader-${suffix}@example.com`;
     const member = await register(memberPage, 'Robin Reader', memberEmail);
     const headers = { Origin: origin };
-    const invitation = await page.request.post(`/api/invites?workspaceId=${workspaceId}`, {
-      headers,
-      data: { email: memberEmail },
+    await test.step('Invite and accept ordinary workspace membership', async () => {
+      const invitation = await page.request.post(`/api/invites?workspaceId=${workspaceId}`, {
+        headers,
+        data: { email: memberEmail },
+      });
+      expect(invitation.status()).toBe(201);
+      const token = new URL(((await invitation.json()) as { url: string }).url).searchParams.get(
+        'invite',
+      );
+      expect(token).toBeTruthy();
+      const accepted = await memberPage.request.post('/api/invites/accept', {
+        headers,
+        data: { token },
+      });
+      expect(accepted.status()).toBe(200);
     });
-    expect(invitation.status()).toBe(201);
-    const token = new URL(((await invitation.json()) as { url: string }).url).searchParams.get(
-      'invite',
-    );
-    expect(token).toBeTruthy();
-    const accepted = await memberPage.request.post('/api/invites/accept', {
-      headers,
-      data: { token },
-    });
-    expect(accepted.status()).toBe(200);
     // Select the accepted workspace using the existing persisted preference contract.
     // This changes browser-local state only, not server-side permissions.
     await memberPage.evaluate((id) => {
@@ -177,139 +219,152 @@ test('document lifecycle, member permissions and foreign workspace isolation', a
     region = await documents(page, project.id);
     await region.getByRole('button', { name: /Release guide Browser acceptance summary/ }).click();
     detail = page.getByRole('dialog', { name: 'Release guide', exact: true });
-    await detail.getByLabel('Workspace member', { exact: true }).selectOption(member.user.id);
-    await detail.getByLabel('Permission', { exact: true }).selectOption('READER');
-    await detail.getByRole('button', { name: 'Save access', exact: true }).click();
-    await expect(detail.getByText('Robin Reader · Reader', { exact: true })).toBeVisible();
-    await memberPage.reload();
-    await documents(memberPage, project.id);
-    await memberPage
-      .getByRole('button', { name: /Release guide Browser acceptance summary/ })
-      .click();
-    const readerDialog = memberPage.getByRole('dialog', { name: 'Release guide', exact: true });
-    await expect(readerDialog).toBeVisible();
-    await expect(
-      readerDialog.getByRole('button', { name: 'Rename or edit summary', exact: true }),
-    ).toHaveCount(0);
-    await expect(
-      readerDialog.getByRole('region', { name: 'Document permissions', exact: true }),
-    ).toHaveCount(0);
-    const current = (await (await page.request.get(endpoint)).json()) as ProjectDocumentView;
-    expect(
-      (
-        await memberPage.request.patch(endpoint, {
-          headers,
-          data: { title: 'Forbidden rename', version: current.version },
-        })
-      ).status(),
-    ).toBe(403);
-    await detail.getByLabel('Permission', { exact: true }).selectOption('EDITOR');
-    await detail.getByRole('button', { name: 'Save access', exact: true }).click();
-    await expect(detail.getByText('Robin Reader · Editor', { exact: true })).toBeVisible();
-    await memberPage.reload();
-    await documents(memberPage, project.id);
-    await memberPage
-      .getByRole('button', { name: /Release guide Browser acceptance summary/ })
-      .click();
-    await expect(
-      memberPage
+    await grantDocumentAccess(page, detail, endpoint, member.user.id, 'READER');
+    await test.step('Verify Reader visibility and rejected metadata mutation', async () => {
+      await memberPage.reload();
+      await documents(memberPage, project.id);
+      await memberPage
+        .getByRole('button', { name: /Release guide Browser acceptance summary/ })
+        .click();
+      const readerDialog = memberPage.getByRole('dialog', { name: 'Release guide', exact: true });
+      await expect(readerDialog).toBeVisible();
+      await expect(
+        readerDialog.getByRole('button', { name: 'Rename or edit summary', exact: true }),
+      ).toHaveCount(0);
+      await expect(
+        readerDialog.getByRole('region', { name: 'Document permissions', exact: true }),
+      ).toHaveCount(0);
+      const current = (await (await page.request.get(endpoint)).json()) as ProjectDocumentView;
+      expect(
+        (
+          await memberPage.request.patch(endpoint, {
+            headers,
+            data: { title: 'Forbidden rename', version: current.version },
+          })
+        ).status(),
+      ).toBe(403);
+    });
+    await grantDocumentAccess(page, detail, endpoint, member.user.id, 'EDITOR');
+    await test.step('Verify Editor can save metadata but cannot archive', async () => {
+      await memberPage.reload();
+      await documents(memberPage, project.id);
+      await memberPage
+        .getByRole('button', { name: /Release guide Browser acceptance summary/ })
+        .click();
+      await expect(
+        memberPage
+          .getByRole('dialog')
+          .getByRole('button', { name: 'Rename or edit summary', exact: true }),
+      ).toBeVisible();
+      await expect(
+        memberPage
+          .getByRole('dialog')
+          .getByRole('button', { name: 'Archive document', exact: true }),
+      ).toHaveCount(0);
+      const editorBefore = (await (
+        await memberPage.request.get(endpoint)
+      ).json()) as ProjectDocumentView;
+      await memberPage
         .getByRole('dialog')
-        .getByRole('button', { name: 'Rename or edit summary', exact: true }),
-    ).toBeVisible();
-    await expect(
-      memberPage.getByRole('dialog').getByRole('button', { name: 'Archive document', exact: true }),
-    ).toHaveCount(0);
-    const editorBefore = (await (
-      await memberPage.request.get(endpoint)
-    ).json()) as ProjectDocumentView;
-    await memberPage
-      .getByRole('dialog')
-      .getByRole('button', { name: 'Rename or edit summary', exact: true })
-      .click();
-    const editorForm = memberPage.getByRole('dialog', { name: 'Rename document', exact: true });
-    await editorForm.getByLabel('Summary', { exact: true }).fill('Browser acceptance summary');
-    await editorForm.getByRole('button', { name: 'Save document', exact: true }).click();
-    await expect(editorForm).toHaveCount(0);
-    const editorAfter = (await (
-      await memberPage.request.get(endpoint)
-    ).json()) as ProjectDocumentView;
-    expect(editorAfter.version).toBe(editorBefore.version + 1);
-    // Reload owner detail after the editor's real successful metadata write.
-    await waitForWorkspace(page, () => page.reload());
-    region = await documents(page, project.id);
-    await region.getByRole('button', { name: /Release guide Browser acceptance summary/ }).click();
-    detail = page.getByRole('dialog', { name: 'Release guide', exact: true });
-    await expect(detail.getByText('Robin Reader · Editor', { exact: true })).toBeVisible();
-    await detail
-      .getByRole('button', { name: 'Remove access for Robin Reader', exact: true })
-      .click();
-    await expect(detail.getByText('Robin Reader · Editor', { exact: true })).toHaveCount(0);
-    expect((await memberPage.request.get(endpoint)).status()).toBe(404);
-
-    const foreignPage = await foreignContext.newPage();
-    const foreign = await register(
-      foreignPage,
-      'Finley Foreign',
-      `m41-foreign-${suffix}@example.com`,
-    );
-    expect((await foreignPage.request.get(endpoint)).status()).toBe(404);
-    const mismatched = endpoint.replace(workspaceId, foreign.workspaces[0].id);
-    expect((await foreignPage.request.get(mismatched)).status()).toBe(404);
-    const foreignList = await foreignPage.request.get(
-      `/api/projects/${project.id}/documents?workspaceId=${foreign.workspaces[0].id}`,
-    );
-    expect(foreignList.status()).toBe(404);
-
-    await detail.getByRole('button', { name: 'Archive document', exact: true }).click();
-    let confirm = page.getByRole('dialog', { name: 'Archive this document?', exact: true });
-    await keyboardDialog(page, confirm);
-    await confirm.getByRole('button', { name: 'Cancel', exact: true }).click();
-    expect(
-      ((await (await page.request.get(endpoint)).json()) as ProjectDocumentView).archivedAt,
-    ).toBeNull();
-    await detail.getByRole('button', { name: 'Archive document', exact: true }).click();
-    confirm = page.getByRole('dialog', { name: 'Archive this document?', exact: true });
-    await confirm.getByRole('button', { name: 'Confirm archive', exact: true }).click();
-    await expect(confirm).toHaveCount(0);
-    await expect(detail.getByText(/Read-only/)).toBeVisible();
-    await expect(
-      detail.getByRole('button', { name: 'Rename or edit summary', exact: true }),
-    ).toHaveCount(0);
-    await expect(detail.getByRole('button', { name: 'Save access', exact: true })).toHaveCount(0);
-    const archived = (await (await page.request.get(endpoint)).json()) as ProjectDocumentView;
-    expect(archived.archivedAt).not.toBeNull();
-    expect(
-      (
-        await page.request.patch(endpoint, {
-          headers,
-          data: { title: 'Cannot edit archive', version: archived.version },
-        })
-      ).status(),
-    ).toBe(409);
-    await detail.getByRole('button', { name: 'Close dialog', exact: true }).click();
-    await region.getByLabel('Document state', { exact: true }).selectOption('archived');
-    await region.getByRole('button', { name: /Release guide Browser acceptance summary/ }).click();
-    await expect(detail.getByText(/Read-only/)).toBeVisible();
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
-      true,
-    );
-    await page.screenshot({ path: testInfo.outputPath('documents-dark.png'), fullPage: true });
-    await detail.getByRole('button', { name: 'Close dialog', exact: true }).click();
-    await waitForWorkspace(page, () => page.reload());
-    region = await documents(page, project.id);
-    await expect(
-      region.getByRole('button', { name: /Release guide Browser acceptance summary/ }),
-    ).toHaveCount(0);
-    await region.getByLabel('Document state', { exact: true }).selectOption('archived');
-    await expect(
-      region.getByRole('button', { name: /Release guide Browser acceptance summary/ }),
-    ).toBeVisible();
-    await page.getByRole('button', { name: 'Switch to light mode', exact: true }).click();
-    await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
-      true,
-    );
-    await page.screenshot({ path: testInfo.outputPath('documents-light.png'), fullPage: true });
+        .getByRole('button', { name: 'Rename or edit summary', exact: true })
+        .click();
+      const editorForm = memberPage.getByRole('dialog', { name: 'Rename document', exact: true });
+      await editorForm.getByLabel('Summary', { exact: true }).fill('Browser acceptance summary');
+      await editorForm.getByRole('button', { name: 'Save document', exact: true }).click();
+      await expect(editorForm).toHaveCount(0);
+      const editorAfter = (await (
+        await memberPage.request.get(endpoint)
+      ).json()) as ProjectDocumentView;
+      expect(editorAfter.version).toBe(editorBefore.version + 1);
+    });
+    await test.step('Refresh owner and revoke document access', async () => {
+      // Reload owner detail after the editor's real successful metadata write.
+      await waitForWorkspace(page, () => page.reload());
+      region = await documents(page, project.id);
+      await region
+        .getByRole('button', { name: /Release guide Browser acceptance summary/ })
+        .click();
+      detail = page.getByRole('dialog', { name: 'Release guide', exact: true });
+      await expect(detail.getByText('Robin Reader · Editor', { exact: true })).toBeVisible();
+      await detail
+        .getByRole('button', { name: 'Remove access for Robin Reader', exact: true })
+        .click();
+      await expect(detail.getByText('Robin Reader · Editor', { exact: true })).toHaveCount(0);
+      expect((await memberPage.request.get(endpoint)).status()).toBe(404);
+    });
+    await test.step('Reject foreign-workspace document detail and list access', async () => {
+      const foreignPage = await foreignContext.newPage();
+      const foreign = await register(
+        foreignPage,
+        'Finley Foreign',
+        `m41-foreign-${suffix}@example.com`,
+      );
+      expect((await foreignPage.request.get(endpoint)).status()).toBe(404);
+      const mismatched = endpoint.replace(workspaceId, foreign.workspaces[0].id);
+      expect((await foreignPage.request.get(mismatched)).status()).toBe(404);
+      const foreignList = await foreignPage.request.get(
+        `/api/projects/${project.id}/documents?workspaceId=${foreign.workspaces[0].id}`,
+      );
+      expect(foreignList.status()).toBe(404);
+    });
+    await test.step('Cancel then confirm archive; verify read-only persistence and responsive themes', async () => {
+      await detail.getByRole('button', { name: 'Archive document', exact: true }).click();
+      let confirm = page.getByRole('dialog', { name: 'Archive this document?', exact: true });
+      await keyboardDialog(page, confirm);
+      await confirm.getByRole('button', { name: 'Cancel', exact: true }).click();
+      expect(
+        ((await (await page.request.get(endpoint)).json()) as ProjectDocumentView).archivedAt,
+      ).toBeNull();
+      await detail.getByRole('button', { name: 'Archive document', exact: true }).click();
+      confirm = page.getByRole('dialog', { name: 'Archive this document?', exact: true });
+      await confirm.getByRole('button', { name: 'Confirm archive', exact: true }).click();
+      await expect(confirm).toHaveCount(0);
+      await expect(detail.getByText(/Read-only/)).toBeVisible();
+      await expect(
+        detail.getByRole('button', { name: 'Rename or edit summary', exact: true }),
+      ).toHaveCount(0);
+      await expect(detail.getByRole('button', { name: 'Save access', exact: true })).toHaveCount(0);
+      const archived = (await (await page.request.get(endpoint)).json()) as ProjectDocumentView;
+      expect(archived.archivedAt).not.toBeNull();
+      expect(
+        (
+          await page.request.patch(endpoint, {
+            headers,
+            data: { title: 'Cannot edit archive', version: archived.version },
+          })
+        ).status(),
+      ).toBe(409);
+      await detail.getByRole('button', { name: 'Close dialog', exact: true }).click();
+      await region
+        .getByRole('combobox', { name: 'Document state', exact: true })
+        .selectOption('archived');
+      await region
+        .getByRole('button', { name: /Release guide Browser acceptance summary/ })
+        .click();
+      await expect(detail.getByText(/Read-only/)).toBeVisible();
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+        true,
+      );
+      await page.screenshot({ path: testInfo.outputPath('documents-dark.png'), fullPage: true });
+      await detail.getByRole('button', { name: 'Close dialog', exact: true }).click();
+      await waitForWorkspace(page, () => page.reload());
+      region = await documents(page, project.id);
+      await expect(
+        region.getByRole('button', { name: /Release guide Browser acceptance summary/ }),
+      ).toHaveCount(0);
+      await region
+        .getByRole('combobox', { name: 'Document state', exact: true })
+        .selectOption('archived');
+      await expect(
+        region.getByRole('button', { name: /Release guide Browser acceptance summary/ }),
+      ).toBeVisible();
+      await page.getByRole('button', { name: 'Switch to light mode', exact: true }).click();
+      await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+        true,
+      );
+      await page.screenshot({ path: testInfo.outputPath('documents-light.png'), fullPage: true });
+    });
     expect(errors).toEqual([]);
     expect(outbound).toEqual([]);
   } finally {

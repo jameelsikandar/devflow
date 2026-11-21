@@ -273,3 +273,44 @@ Formatting, lint, TypeScript and fresh-snapshot discovery are reported separatel
 with the correction. Only an authorized real run can establish successful startup,
 focus behavior, persistence and browser acceptance. The failed attempt is not a
 passing browser test and does not consume or replace earlier database evidence.
+
+## Permission-picker timeout diagnosis (baseline `9b0b40e`)
+
+The later owner-authorized attempt in
+`/tmp/devflow-m41-browser-cwd-l05j4i_r` started Next successfully but both journeys
+failed at the 120-second test limit. Keep that entire snapshot, markers, logs,
+reports and synthetic records unchanged; it is now failure evidence, not a reusable
+execution directory. The earlier `1yrfe5h8` startup failure remains retained too.
+The preparation/execution examples above describe earlier baselines; do not reuse
+those snapshots or commands for this candidate. A later approved run needs a fresh
+snapshot from the reviewed source/candidate changes and a new one-use marker.
+
+Read-only inspection decoded the embedded HTML report ZIP in memory. Both action
+trees identify **original `e2e/documents.spec.ts:180:66`**, selecting the workspace
+member with `getByLabel('Workspace member', { exact: true })`:
+
+- Chromium: the select action waited **85,823 ms** before the overall test timeout.
+- Mobile Chromium: the same action waited **99,236 ms**.
+
+Both error contexts expose a `combobox` named `Workspace member`, with Robin Reader
+available but the placeholder still selected, and Save access disabled. Invitation
+and membership checks had completed before this action. Playwright 1.56.1's
+`getElementLabels` uses `elementText` on the wrapping `<label>`, including nested
+option text. Exact label-text matching therefore misses this control even though
+its accessible combobox name is correct. No permission submission was reached at
+the stalled action; evidence does not indicate a slow grant API or overlay defect.
+
+The candidate uses exact **combobox role/name** locators for Workspace member,
+Permission and Document state. A shared named grant step verifies the option's
+user ID, selected member/permission, enabled save button, real grant PUT status 200
+and resulting grant label. Named authentication, navigation, invitation, Reader,
+Editor, revocation, isolation and archive steps preserve the existing assertions
+and make subsequent stalls identifiable. The 120-second limit, zero retries,
+database guards and production application are unchanged.
+
+The report also records a ZIP central-directory error, but retains no readable raw
+trace ZIP/action file or stack explaining it. The embedded HTML report ZIP itself
+is readable. The established failure is the locator timeout; the ZIP error appears
+to be secondary artifact/teardown trouble, and its precise cause is **unconfirmed**.
+No trace settings were weakened or evidence repaired/deleted. A new authorized
+browser execution remains necessary to verify the correction and later stages.
